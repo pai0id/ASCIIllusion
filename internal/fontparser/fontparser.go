@@ -1,4 +1,4 @@
-package FontParser
+package fontparser
 
 import (
 	"fmt"
@@ -8,8 +8,8 @@ import (
 	"github.com/golang/freetype"
 )
 
-type CharMatrix [][]bool
 type Char byte
+type CharMatrix [][]bool
 
 func GetChar(mapNum int) (Char, error) {
 	if mapNum >= 0 && mapNum < 95 {
