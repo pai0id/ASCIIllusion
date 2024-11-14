@@ -11,6 +11,10 @@ import (
 type Char byte
 type CharMatrix [][]bool
 
+func (cm CharMatrix) GetData() [][]bool {
+	return cm
+}
+
 func GetChar(mapNum int) (Char, error) {
 	if mapNum >= 0 && mapNum < 95 {
 		return Char(mapNum + 32), nil // ASCII characters are offset by 32

@@ -1,11 +1,10 @@
-package shape
+package mapping
 
 import (
 	"fmt"
 	"math"
 )
 
-type Cell [][]bool
 type Hyst [][]bool
 type DescriptionVector []Hyst
 
@@ -32,14 +31,15 @@ func NewContext(horParts, vertParts, phiParts, rParts int, rMax float64) *Approx
 	}
 }
 
-func (c Cell) GetVal(ox, oy, x, y int) bool {
+func GetVal(c Cell, ox, oy, x, y int) bool {
+	cellData := c.GetData()
 	i := ox + x
 	j := oy + y
 
-	if i < 0 || i >= len(c) || j < 0 || j >= len(c[0]) {
+	if i < 0 || i >= len(cellData) || j < 0 || j >= len(cellData[0]) {
 		return false
 	}
-	return c[i][j]
+	return cellData[i][j]
 }
 
 func isPointInSector(x, y int, s polarSector) bool {
@@ -64,7 +64,7 @@ func arePointsInSector(s polarSector, c Cell) bool {
 
 	for x := xMin; x <= xMax; x++ {
 		for y := yMin; y <= yMax; y++ {
-			if c.GetVal(s.ox, s.oy, x, y) && isPointInSector(x, y, s) {
+			if GetVal(c, s.ox, s.oy, x, y) && isPointInSector(x, y, s) {
 				return true
 			}
 		}
@@ -74,6 +74,7 @@ func arePointsInSector(s polarSector, c Cell) bool {
 }
 
 func GetDescriptionVector(ctx *ApproximationContext, c Cell) DescriptionVector {
+	cellData := c.GetData()
 	resVector := make(DescriptionVector, ctx.horParts*ctx.vertParts)
 	for i := range resVector {
 		resVector[i] = make(Hyst, ctx.phiParts)
@@ -82,8 +83,8 @@ func GetDescriptionVector(ctx *ApproximationContext, c Cell) DescriptionVector {
 		}
 	}
 
-	n := float64(len(c[0]))
-	m := float64(len(c))
+	n := float64(len(cellData[0]))
+	m := float64(len(cellData))
 
 	nStep := n / float64(ctx.horParts)
 	mStep := m / float64(ctx.vertParts)
@@ -121,6 +122,14 @@ func GetDescriptionVector(ctx *ApproximationContext, c Cell) DescriptionVector {
 	}
 
 	return resVector
+}
+
+func GetShapeMap(ctx *ApproximationContext, cArr []Cell) []DescriptionVector {
+	res := make([]DescriptionVector, 0, len(cArr))
+	for _, c := range cArr {
+		res = append(res, GetDescriptionVector(ctx, c))
+	}
+	return res
 }
 
 func subHyst(a, b Hyst) (int, error) {
