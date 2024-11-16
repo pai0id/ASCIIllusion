@@ -14,6 +14,15 @@ type DrawContext struct {
 	shapeContext  *mapping.ApproximationContext
 }
 
+func (c *DrawContext) SetBrightnessMap(fm []fontparser.CharMatrix) {
+	c.brightnessMap = mapping.GetBrightnessMap(fontMapToCellSlice(fm))
+}
+
+func (c *DrawContext) SetShapeMap(ctx *mapping.ApproximationContext, fm []fontparser.CharMatrix) {
+	c.shapeContext = ctx
+	c.shapeMap = mapping.GetShapeMap(ctx, fontMapToCellSlice(fm))
+}
+
 type Pixel struct {
 	brightness int // [0, 100]
 	isLine     bool
@@ -33,7 +42,7 @@ func (c CellInfo) GetData() [][]bool {
 	return c.cell
 }
 
-func FontMapToCellSlice(cms []fontparser.CharMatrix) []mapping.Cell {
+func fontMapToCellSlice(cms []fontparser.CharMatrix) []mapping.Cell {
 	cells := make([]mapping.Cell, len(cms))
 	for i, cm := range cms {
 		cells[i] = cm
