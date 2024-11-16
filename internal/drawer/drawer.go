@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/pai0id/CgCourseProject/internal/drawer/fontparser"
 	"github.com/pai0id/CgCourseProject/internal/drawer/mapping"
+	"github.com/pai0id/CgCourseProject/internal/fontparser"
 )
 
 type DrawContext struct {
