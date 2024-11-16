@@ -1,0 +1,11 @@
+{
+  "imgWidth": 44,
+  "imgHeight": 44,
+  "fontSize": 20.0,
+  "dpi": 144.0,
+  "horParts": 11,
+  "vertParts": 11,
+  "phiParts": 4,
+  "rParts": 4,
+  "rMax": 44.0
+}
