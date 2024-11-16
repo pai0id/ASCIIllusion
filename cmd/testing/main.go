@@ -6,11 +6,16 @@ import (
 	"github.com/pai0id/CgCourseProject/internal/drawer"
 	"github.com/pai0id/CgCourseProject/internal/drawer/mapping"
 	"github.com/pai0id/CgCourseProject/internal/fontparser"
+	"github.com/pai0id/CgCourseProject/internal/reader"
 )
 
 func main() {
 	mctx := mapping.NewContext(11, 11, 4, 4, 44)
-	chars := make([]fontparser.Char, 0, 128)
+	chars, err := reader.ReadChars("fonts/slice.txt")
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
 	for i := 32; i < 127; i++ {
 		chars = append(chars, fontparser.Char(i))
 	}
