@@ -1,4 +1,4 @@
-package objrenderer
+package renderer
 
 // import (
 // 	"math"

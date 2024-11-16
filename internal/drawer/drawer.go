@@ -9,8 +9,8 @@ import (
 )
 
 type DrawContext struct {
-	brightnessMap []int
-	shapeMap      []mapping.DescriptionVector
+	brightnessMap map[fontparser.Char]int
+	shapeMap      map[fontparser.Char]mapping.DescriptionVector
 	shapeContext  *mapping.ApproximationContext
 }
 
@@ -18,13 +18,13 @@ func NewDrawContext() *DrawContext {
 	return &DrawContext{}
 }
 
-func (c *DrawContext) SetBrightnessMap(fm []fontparser.CharMatrix) {
-	c.brightnessMap = mapping.GetBrightnessMap(fontMapToCellSlice(fm))
+func (c *DrawContext) SetBrightnessMap(fm map[fontparser.Char]fontparser.CharMatrix) {
+	c.brightnessMap = mapping.GetBrightnessMap(fontMapToCellMap(fm))
 }
 
-func (c *DrawContext) SetShapeMap(ctx *mapping.ApproximationContext, fm []fontparser.CharMatrix) {
+func (c *DrawContext) SetShapeMap(ctx *mapping.ApproximationContext, fm map[fontparser.Char]fontparser.CharMatrix) {
 	c.shapeContext = ctx
-	c.shapeMap = mapping.GetShapeMap(ctx, fontMapToCellSlice(fm))
+	c.shapeMap = mapping.GetShapeMap(ctx, fontMapToCellMap(fm))
 }
 
 type Pixel struct {
@@ -54,10 +54,10 @@ func (c CellInfo) GetData() [][]bool {
 	return c.cell
 }
 
-func fontMapToCellSlice(cms []fontparser.CharMatrix) []mapping.Cell {
-	cells := make([]mapping.Cell, len(cms))
-	for i, cm := range cms {
-		cells[i] = cm
+func fontMapToCellMap(cms map[fontparser.Char]fontparser.CharMatrix) map[fontparser.Char]mapping.Cell {
+	cells := make(map[fontparser.Char]mapping.Cell, len(cms))
+	for ch, cm := range cms {
+		cells[ch] = cm
 	}
 	return cells
 }
@@ -83,9 +83,11 @@ func SplitToCells(img Image, cellWidth, cellHeight int) (Canvas, error) {
 					p := img[i*cellHeight+k][j*cellWidth+l]
 					if p.IsLine {
 						cells[i][j].isLine = true
+						cells[i][j].cell[k][l] = true
+					} else {
+						cells[i][j].cell[k][l] = p.Brightness > 0
+						cells[i][j].brightness += p.Brightness
 					}
-					cells[i][j].cell[k][l] = p.Brightness > 0
-					cells[i][j].brightness += p.Brightness
 				}
 			}
 			if cells[i][j].isLine {
@@ -102,11 +104,11 @@ func SplitToCells(img Image, cellWidth, cellHeight int) (Canvas, error) {
 func (c Canvas) Draw(ctx *DrawContext) error {
 	for i := range c {
 		for j := range c[i] {
-			var minid int
+			var minch fontparser.Char
 			var mindelt int = math.MaxInt
 			if c[i][j].isLine {
 				dv := mapping.GetDescriptionVector(ctx.shapeContext, c[i][j])
-				for id, dvf := range ctx.shapeMap {
+				for ch, dvf := range ctx.shapeMap {
 					d, err := mapping.GetVectorDelt(dv, dvf)
 					if err != nil {
 						return fmt.Errorf("error: could not draw Canvas: %w", err)
@@ -114,23 +116,19 @@ func (c Canvas) Draw(ctx *DrawContext) error {
 					}
 					if d < mindelt {
 						mindelt = d
-						minid = id
+						minch = ch
 					}
 				}
 			} else {
-				for id, b := range ctx.brightnessMap {
+				for ch, b := range ctx.brightnessMap {
 					d := absInt(c[i][j].brightness - b)
 					if d < mindelt {
 						mindelt = b
-						minid = id
+						minch = ch
 					}
 				}
 			}
-			c, err := fontparser.GetChar(minid)
-			if err != nil {
-				return fmt.Errorf("error: could not draw Canvas: %w", err)
-			}
-			fmt.Printf("%c", c)
+			fmt.Printf("%c", minch)
 		}
 		fmt.Println()
 	}

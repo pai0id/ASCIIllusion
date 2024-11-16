@@ -3,6 +3,8 @@ package mapping
 import (
 	"fmt"
 	"math"
+
+	"github.com/pai0id/CgCourseProject/internal/fontparser"
 )
 
 type Hyst [][]bool
@@ -31,7 +33,7 @@ func NewContext(horParts, vertParts, phiParts, rParts int, rMax float64) *Approx
 	}
 }
 
-func GetVal(c Cell, ox, oy, x, y int) bool {
+func getVal(c Cell, ox, oy, x, y int) bool {
 	cellData := c.GetData()
 	i := ox + x
 	j := oy + y
@@ -64,7 +66,7 @@ func arePointsInSector(s polarSector, c Cell) bool {
 
 	for x := xMin; x <= xMax; x++ {
 		for y := yMin; y <= yMax; y++ {
-			if GetVal(c, s.ox, s.oy, x, y) && isPointInSector(x, y, s) {
+			if getVal(c, s.ox, s.oy, x, y) && isPointInSector(x, y, s) {
 				return true
 			}
 		}
@@ -124,10 +126,10 @@ func GetDescriptionVector(ctx *ApproximationContext, c Cell) DescriptionVector {
 	return resVector
 }
 
-func GetShapeMap(ctx *ApproximationContext, cArr []Cell) []DescriptionVector {
-	res := make([]DescriptionVector, 0, len(cArr))
-	for _, c := range cArr {
-		res = append(res, GetDescriptionVector(ctx, c))
+func GetShapeMap(ctx *ApproximationContext, cArr map[fontparser.Char]Cell) map[fontparser.Char]DescriptionVector {
+	res := make(map[fontparser.Char]DescriptionVector, len(cArr))
+	for ch, c := range cArr {
+		res[ch] = GetDescriptionVector(ctx, c)
 	}
 	return res
 }

@@ -15,14 +15,7 @@ func (cm CharMatrix) GetData() [][]bool {
 	return cm
 }
 
-func GetChar(mapNum int) (Char, error) {
-	if mapNum >= 0 && mapNum < 95 {
-		return Char(mapNum + 32), nil // ASCII characters are offset by 32
-	}
-	return 0, fmt.Errorf("error: invalid character map number: %d", mapNum)
-}
-
-func GetFontMap(fontFile string, imgWidth, imgHeight int, fontSize, dpi float64) ([]CharMatrix, error) {
+func GetFontMap(fontFile string, imgWidth, imgHeight int, fontSize, dpi float64, slice []Char) (map[Char]CharMatrix, error) {
 	fontBytes, err := os.ReadFile(fontFile)
 	if err != nil {
 		return nil, fmt.Errorf("error: failed to read font file: %w", err)
@@ -40,13 +33,13 @@ func GetFontMap(fontFile string, imgWidth, imgHeight int, fontSize, dpi float64)
 	ctx.SetClip(image.Rect(0, 0, imgWidth, imgHeight))
 	ctx.SetSrc(image.Black)
 
-	matrixes := make([]CharMatrix, 0, 128)
-	for ch := 32; ch < 127; ch++ {
+	matrixes := make(map[Char]CharMatrix, 128)
+	for _, ch := range slice {
 		matrix, err := renderCharToMatrix(ctx, rune(ch), imgWidth, imgHeight, fontSize)
 		if err != nil {
 			return nil, fmt.Errorf("error: failed to render character %c: %w", ch, err)
 		}
-		matrixes = append(matrixes, matrix)
+		matrixes[ch] = matrix
 	}
 
 	return matrixes, nil
