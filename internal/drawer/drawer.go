@@ -14,6 +14,10 @@ type DrawContext struct {
 	shapeContext  *mapping.ApproximationContext
 }
 
+func NewDrawContext() *DrawContext {
+	return &DrawContext{}
+}
+
 func (c *DrawContext) SetBrightnessMap(fm []fontparser.CharMatrix) {
 	c.brightnessMap = mapping.GetBrightnessMap(fontMapToCellSlice(fm))
 }
@@ -24,11 +28,19 @@ func (c *DrawContext) SetShapeMap(ctx *mapping.ApproximationContext, fm []fontpa
 }
 
 type Pixel struct {
-	brightness int // [0, 100]
-	isLine     bool
+	Brightness int // [0, 100]
+	IsLine     bool
 }
 
 type Image [][]Pixel
+
+func NewImage(width, height int) Image {
+	res := make([][]Pixel, width)
+	for i := 0; i < width; i++ {
+		res[i] = make([]Pixel, height)
+	}
+	return res
+}
 
 type CellInfo struct {
 	isLine     bool
@@ -51,29 +63,29 @@ func fontMapToCellSlice(cms []fontparser.CharMatrix) []mapping.Cell {
 }
 
 func SplitToCells(img Image, cellWidth, cellHeight int) (Canvas, error) {
-	n := len(img)
-	m := len(img[0])
-	if n%cellWidth != 0 || m%cellHeight != 0 {
-		return nil, fmt.Errorf("error: cant split image %dx%d to cells %dx%d", n, m, cellWidth, cellHeight)
+	n := len(img)    // высота
+	m := len(img[0]) // ширина
+	if n%cellHeight != 0 || m%cellWidth != 0 {
+		return nil, fmt.Errorf("error: cant split image %dx%d to cells %dx%d", n, m, cellHeight, cellWidth)
 	}
 
-	rowBlocks := n / cellWidth
-	colBlocks := m / cellHeight
+	rowBlocks := m / cellWidth
+	colBlocks := n / cellHeight
 
-	cells := make([][]CellInfo, rowBlocks)
-	for i := 0; i < rowBlocks; i++ {
-		cells[i] = make([]CellInfo, colBlocks)
-		for j := 0; j < colBlocks; j++ {
-			cells[i][j] = CellInfo{cell: make([][]bool, cellWidth), isLine: false, brightness: 0}
-			for k := 0; k < m; k++ {
-				cells[i][j].cell[k] = make([]bool, cellHeight)
-				for l := 0; l < n; l++ {
-					p := img[i*m+k][j*n+l]
-					if p.isLine {
+	cells := make([][]CellInfo, colBlocks)
+	for i := range cells {
+		cells[i] = make([]CellInfo, rowBlocks)
+		for j := range cells[i] {
+			cells[i][j] = CellInfo{cell: make([][]bool, cellHeight), isLine: false, brightness: 0}
+			for k := range cells[i][j].cell {
+				cells[i][j].cell[k] = make([]bool, cellWidth)
+				for l := range cells[i][j].cell[k] {
+					p := img[i*cellHeight+k][j*cellWidth+l]
+					if p.IsLine {
 						cells[i][j].isLine = true
 					}
-					cells[i][j].cell[k][l] = p.brightness > 0
-					cells[i][j].brightness += p.brightness
+					cells[i][j].cell[k][l] = p.Brightness > 0
+					cells[i][j].brightness += p.Brightness
 				}
 			}
 			if cells[i][j].isLine {
