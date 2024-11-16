@@ -11,13 +11,10 @@ import (
 
 func main() {
 	mctx := mapping.NewContext(11, 11, 4, 4, 44)
-	chars, err := reader.ReadChars("fonts/slice.txt")
+	chars, err := reader.ReadCharsJson("fonts/slice.json")
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
-	}
-	for i := 32; i < 127; i++ {
-		chars = append(chars, fontparser.Char(i))
 	}
 	f, err := fontparser.GetFontMap("fonts/IBM.ttf", 44, 44, 20, 144, chars)
 	if err != nil {
@@ -27,7 +24,7 @@ func main() {
 
 	dctx := drawer.NewDrawContext()
 	dctx.SetBrightnessMap(f)
-	delete(f, ' ')
+	// delete(f, ' ')
 	dctx.SetShapeMap(mctx, f)
 
 	canvas := drawer.NewImage(44*40, 44*100)
