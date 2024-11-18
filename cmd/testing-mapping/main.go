@@ -7,8 +7,6 @@ import (
 	"github.com/pai0id/CgCourseProject/internal/drawer/mapping"
 	"github.com/pai0id/CgCourseProject/internal/fontparser"
 	"github.com/pai0id/CgCourseProject/internal/reader"
-	"github.com/pai0id/CgCourseProject/internal/renderer"
-	transformer "github.com/pai0id/CgCourseProject/internal/renderer/transform"
 )
 
 func main() {
@@ -26,23 +24,16 @@ func main() {
 
 	dctx := drawer.NewDrawContext()
 	dctx.SetBrightnessMap(f)
-	delete(f, ' ')
+	// delete(f, ' ')
 	dctx.SetShapeMap(mctx, f)
 
-	obj, err := reader.LoadOBJ("data/tetra.obj")
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return
+	canvas := drawer.NewImage(44*40, 44*100)
+	for x := range canvas {
+		y := (x * x) / 600
+		if y >= 0 && y < len(canvas[x]) {
+			canvas[x][y].IsLine = true
+		}
 	}
-
-	options := renderer.RenderOptions{
-		Width:      44 * 200,
-		Height:     44 * 50,
-		Fov:        60,
-		CameraDist: 1050,
-	}
-
-	canvas := renderer.RenderModel(obj, options)
 
 	cells, err := drawer.SplitToCells(canvas, 44, 44)
 	if err != nil {
@@ -51,21 +42,4 @@ func main() {
 	}
 
 	cells.Draw(dctx)
-
-	for {
-		fmt.Scanf("%v")
-		fmt.Print("\033[H\033[2J")
-		transformer.Rotate(obj, 10, transformer.YAxis)
-		transformer.Rotate(obj, 10, transformer.ZAxis)
-
-		canvas := renderer.RenderModel(obj, options)
-
-		cells, err := drawer.SplitToCells(canvas, 44, 44)
-		if err != nil {
-			fmt.Printf("Error: %v\n", err)
-			return
-		}
-
-		cells.Draw(dctx)
-	}
 }

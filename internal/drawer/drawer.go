@@ -35,9 +35,9 @@ type Pixel struct {
 type Image [][]Pixel
 
 func NewImage(width, height int) Image {
-	res := make([][]Pixel, width)
-	for i := 0; i < width; i++ {
-		res[i] = make([]Pixel, height)
+	res := make([][]Pixel, height)
+	for i := range res {
+		res[i] = make([]Pixel, width)
 	}
 	return res
 }

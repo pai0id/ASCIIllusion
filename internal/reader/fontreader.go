@@ -17,13 +17,13 @@ func ReadCharsTxt(filename string) ([]fontparser.Char, error) {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-	var chars []fontparser.Char
+	var slice []fontparser.Char
 	for scanner.Scan() {
 		text := scanner.Text()
 		for _, ch := range text {
 			char := fontparser.Char(ch)
 			if char >= 32 && char <= 127 {
-				chars = append(chars, char)
+				slice = append(slice, char)
 			} else {
 				return nil, fmt.Errorf("error: cannot read file: non-ASCII char")
 			}
@@ -34,7 +34,11 @@ func ReadCharsTxt(filename string) ([]fontparser.Char, error) {
 		return nil, fmt.Errorf("error: cannot read file: %w", err)
 	}
 
-	return chars, nil
+	if len(slice) < 2 {
+		return nil, fmt.Errorf("error: file contains less than 2 characters")
+	}
+
+	return slice, nil
 }
 
 type JsonData struct {
@@ -58,6 +62,10 @@ func ReadCharsJson(filename string) ([]fontparser.Char, error) {
 	slice := make([]fontparser.Char, len(data.Data))
 	for i, ch := range data.Data {
 		slice[i] = fontparser.Char(ch[0])
+	}
+
+	if len(slice) < 2 {
+		return nil, fmt.Errorf("error: file contains less than 2 characters")
 	}
 
 	return slice, nil
