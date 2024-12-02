@@ -3,43 +3,46 @@ package main
 import (
 	"fmt"
 
-	"github.com/pai0id/CgCourseProject/internal/drawer"
-	"github.com/pai0id/CgCourseProject/internal/drawer/mapping"
+	"github.com/pai0id/CgCourseProject/internal/asciiser"
+	"github.com/pai0id/CgCourseProject/internal/asciiser/mapping"
 	"github.com/pai0id/CgCourseProject/internal/fontparser"
 	"github.com/pai0id/CgCourseProject/internal/reader"
+	"github.com/pai0id/CgCourseProject/internal/tui"
 )
 
 func main() {
-	mctx := mapping.NewContext(11, 11, 4, 4, 44)
-	chars, err := reader.ReadCharsJson("fonts/slice.json")
+	mctx := mapping.NewContext(8, 11, 4, 4, 66)
+	chars, err := reader.ReadCharsTxt("fonts/slice.txt")
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
 	}
-	f, err := fontparser.GetFontMap("fonts/IBM.ttf", 44, 44, 20, 144, chars)
+	f, err := fontparser.GetFontMap("fonts/IBM.ttf", 48, 66, 25, 144, chars)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
 	}
 
-	dctx := drawer.NewDrawContext()
-	dctx.SetBrightnessMap(f)
-	// delete(f, ' ')
-	dctx.SetShapeMap(mctx, f)
+	dctx := asciiser.NewDrawContext(mctx, f)
 
-	canvas := drawer.NewImage(44*40, 44*100)
+	canvas := asciiser.NewImage(48*150, 66*30)
 	for x := range canvas {
-		y := (x * x) / 600
+		y := (x * x) / 300
 		if y >= 0 && y < len(canvas[x]) {
 			canvas[x][y].IsLine = true
 		}
 	}
 
-	cells, err := drawer.SplitToCells(canvas, 44, 44)
+	cells, err := asciiser.SplitToCells(canvas, 48, 66)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
 	}
 
-	cells.Draw(dctx)
+	mtx, err := cells.ConvertToASCII(dctx)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+	tui.DrawASCIImtr(mtx)
 }

@@ -1,10 +1,10 @@
-package drawer
+package asciiser
 
 import (
 	"fmt"
 	"math"
 
-	"github.com/pai0id/CgCourseProject/internal/drawer/mapping"
+	"github.com/pai0id/CgCourseProject/internal/asciiser/mapping"
 	"github.com/pai0id/CgCourseProject/internal/fontparser"
 )
 
@@ -12,19 +12,37 @@ type DrawContext struct {
 	brightnessMap map[fontparser.Char]int
 	shapeMap      map[fontparser.Char]mapping.DescriptionVector
 	shapeContext  *mapping.ApproximationContext
+	bg            fontparser.Char
 }
 
-func NewDrawContext() *DrawContext {
-	return &DrawContext{}
+func NewDrawContext(ctx *mapping.ApproximationContext, fm map[fontparser.Char]fontparser.CharMatrix) *DrawContext {
+	dc := DrawContext{}
+	dc.SetBrightnessMap(fm)
+	dc.SetShapeMap(ctx, fm)
+	return &dc
 }
 
 func (c *DrawContext) SetBrightnessMap(fm map[fontparser.Char]fontparser.CharMatrix) {
 	c.brightnessMap = mapping.GetBrightnessMap(fontMapToCellMap(fm))
+	var minch fontparser.Char
+	var minb int = mapping.MaxBrigtness + 1
+	for i, v := range c.brightnessMap {
+		if v < minb {
+			minb = v
+			minch = i
+		}
+	}
+	c.bg = minch
 }
 
 func (c *DrawContext) SetShapeMap(ctx *mapping.ApproximationContext, fm map[fontparser.Char]fontparser.CharMatrix) {
 	c.shapeContext = ctx
+	bgMtx, ok := fm[c.bg]
+	delete(fm, c.bg)
 	c.shapeMap = mapping.GetShapeMap(ctx, fontMapToCellMap(fm))
+	if ok {
+		fm[c.bg] = bgMtx
+	}
 }
 
 type Pixel struct {
@@ -63,6 +81,9 @@ func fontMapToCellMap(cms map[fontparser.Char]fontparser.CharMatrix) map[fontpar
 }
 
 func SplitToCells(img Image, cellWidth, cellHeight int) (Canvas, error) {
+	if img == nil {
+		return nil, nil
+	}
 	n := len(img)    // высота
 	m := len(img[0]) // ширина
 	if n%cellHeight != 0 || m%cellWidth != 0 {
@@ -101,7 +122,13 @@ func SplitToCells(img Image, cellWidth, cellHeight int) (Canvas, error) {
 	return cells, nil
 }
 
-func (c Canvas) Draw(ctx *DrawContext) error {
+type ASCIImtx [][]fontparser.Char
+
+func (c Canvas) ConvertToASCII(ctx *DrawContext) (ASCIImtx, error) {
+	res := make([][]fontparser.Char, len(c))
+	for i := range c {
+		res[i] = make([]fontparser.Char, len(c[i]))
+	}
 	for i := range c {
 		for j := range c[i] {
 			var minch fontparser.Char
@@ -111,8 +138,7 @@ func (c Canvas) Draw(ctx *DrawContext) error {
 				for ch, dvf := range ctx.shapeMap {
 					d, err := mapping.GetVectorDelt(dv, dvf)
 					if err != nil {
-						return fmt.Errorf("error: could not draw Canvas: %w", err)
-
+						return nil, fmt.Errorf("error: could not draw Canvas: %v", err)
 					}
 					if d < mindelt {
 						mindelt = d
@@ -128,11 +154,10 @@ func (c Canvas) Draw(ctx *DrawContext) error {
 					}
 				}
 			}
-			fmt.Printf("%c", minch)
+			res[i][j] = minch
 		}
-		fmt.Println()
 	}
-	return nil
+	return res, nil
 }
 
 func absInt(x int) int {

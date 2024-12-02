@@ -12,12 +12,17 @@ type Vertex struct {
 	X, Y, Z float64
 }
 
+type Normal struct {
+	X, Y, Z float64
+}
+
 type Face struct {
 	VertexIndices []int
 }
 
 type Model struct {
 	Vertices []Vertex
+	Normals  []Normal
 	Faces    []Face
 }
 
@@ -33,13 +38,20 @@ func LoadOBJ(filepath string) (*Model, error) {
 
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
-		if strings.HasPrefix(line, "v ") {
+		switch {
+		case strings.HasPrefix(line, "v "):
 			vertex, err := parseVertex(line)
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse vertex: %w", err)
 			}
 			model.Vertices = append(model.Vertices, vertex)
-		} else if strings.HasPrefix(line, "f ") {
+		case strings.HasPrefix(line, "vn "):
+			normal, err := parseNormal(line)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse normal: %w", err)
+			}
+			model.Normals = append(model.Normals, normal)
+		case strings.HasPrefix(line, "f "):
 			face, err := parseFace(line)
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse face: %w", err)
@@ -75,6 +87,26 @@ func parseVertex(line string) (Vertex, error) {
 	return Vertex{X: x, Y: y, Z: z}, nil
 }
 
+func parseNormal(line string) (Normal, error) {
+	parts := strings.Fields(line)
+	if len(parts) < 4 {
+		return Normal{}, fmt.Errorf("invalid normal line: %s", line)
+	}
+	x, err := strconv.ParseFloat(parts[1], 64)
+	if err != nil {
+		return Normal{}, fmt.Errorf("invalid x coordinate: %w", err)
+	}
+	y, err := strconv.ParseFloat(parts[2], 64)
+	if err != nil {
+		return Normal{}, fmt.Errorf("invalid y coordinate: %w", err)
+	}
+	z, err := strconv.ParseFloat(parts[3], 64)
+	if err != nil {
+		return Normal{}, fmt.Errorf("invalid z coordinate: %w", err)
+	}
+	return Normal{X: x, Y: y, Z: z}, nil
+}
+
 func parseFace(line string) (Face, error) {
 	parts := strings.Fields(line)
 	if len(parts) < 4 {
@@ -82,7 +114,6 @@ func parseFace(line string) (Face, error) {
 	}
 	indices := make([]int, 0, len(parts)-1)
 	for _, part := range parts[1:] {
-
 		vertexIndexStr := strings.Split(part, "/")[0]
 		vertexIndex, err := strconv.Atoi(vertexIndexStr)
 		if err != nil {

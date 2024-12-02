@@ -3,7 +3,7 @@ package renderer
 import (
 	"math"
 
-	"github.com/pai0id/CgCourseProject/internal/drawer"
+	"github.com/pai0id/CgCourseProject/internal/asciiser"
 	"github.com/pai0id/CgCourseProject/internal/reader"
 )
 
@@ -14,10 +14,20 @@ type RenderOptions struct {
 	CameraDist float64
 }
 
-func RenderModel(model *reader.Model, options RenderOptions) drawer.Image {
+func RenderModels(models []*reader.Model, options *RenderOptions) asciiser.Image {
+	if options.Width == 0 || options.Height == 0 {
+		return nil
+	}
+	image := asciiser.NewImage(options.Width, options.Height)
 
-	image := drawer.NewImage(options.Width, options.Height)
+	for _, model := range models {
+		renderModel(model, options, image)
+	}
 
+	return image
+}
+
+func renderModel(model *reader.Model, options *RenderOptions, image asciiser.Image) {
 	centerX := float64(options.Width) / 2
 	centerY := float64(options.Height) / 2
 	scale := centerX / math.Tan(options.Fov*math.Pi/360)
@@ -38,8 +48,6 @@ func RenderModel(model *reader.Model, options RenderOptions) drawer.Image {
 			rasterizeLine(image, v1[0], v1[1], v2[0], v2[1])
 		}
 	}
-
-	return image
 }
 
 func perspectiveProject(vertex reader.Vertex, scale, cameraDist float64) (float64, float64) {
@@ -50,7 +58,7 @@ func perspectiveProject(vertex reader.Vertex, scale, cameraDist float64) (float6
 	return vertex.X * scale / z, vertex.Y * scale / z
 }
 
-func rasterizeLine(image drawer.Image, x0, y0, x1, y1 int) {
+func rasterizeLine(image asciiser.Image, x0, y0, x1, y1 int) {
 	dx := int(math.Abs(float64(x1 - x0)))
 	dy := int(math.Abs(float64(y1 - y0)))
 	sx := -1
@@ -80,4 +88,49 @@ func rasterizeLine(image drawer.Image, x0, y0, x1, y1 int) {
 			y0 += sy
 		}
 	}
+}
+
+func OptimalCameraDist(models []*reader.Model, options *RenderOptions) float64 {
+	maxDist := 0.0
+	for _, model := range models {
+		var minX, minY, minZ = math.MaxFloat64, math.MaxFloat64, math.MaxFloat64
+		var maxX, maxY, maxZ = -math.MaxFloat64, -math.MaxFloat64, -math.MaxFloat64
+
+		for _, v := range model.Vertices {
+			if v.X < minX {
+				minX = v.X
+			}
+			if v.X > maxX {
+				maxX = v.X
+			}
+			if v.Y < minY {
+				minY = v.Y
+			}
+			if v.Y > maxY {
+				maxY = v.Y
+			}
+			if v.Z < minZ {
+				minZ = v.Z
+			}
+			if v.Z > maxZ {
+				maxZ = v.Z
+			}
+		}
+
+		width := maxX - minX
+		height := maxY - minY
+
+		centerX := float64(options.Width) / 2
+
+		scale := centerX / math.Tan(options.Fov*math.Pi/360)
+
+		distX := width * scale / float64(options.Width)
+		distY := height * scale / float64(options.Height)
+
+		res := 1.2 * (math.Max(distX, distY) + maxZ)
+		if res > maxDist {
+			maxDist = res
+		}
+	}
+	return maxDist
 }
