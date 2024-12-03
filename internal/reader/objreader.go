@@ -8,23 +8,34 @@ import (
 	"strings"
 )
 
+type Point interface {
+	GetCoords() (float64, float64, float64)
+}
+
 type Vertex struct {
 	X, Y, Z float64
+}
+
+func (v Vertex) GetCoords() (float64, float64, float64) {
+	return v.X, v.Y, v.Z
 }
 
 type Normal struct {
 	X, Y, Z float64
 }
 
+func (n Normal) GetCoords() (float64, float64, float64) {
+	return n.X, n.Y, n.Z
+}
+
 type Face struct {
-	VertexIndices []int
+	Vertices [3]Vertex
+	Normal   Normal
 }
 
 type Model struct {
-	Vertices []Vertex
-	Normals  []Normal
-	Faces    []Face
-	Center   Vertex
+	Faces  []Face
+	Center Vertex
 }
 
 func LoadOBJ(filepath string) (*Model, error) {
@@ -34,6 +45,8 @@ func LoadOBJ(filepath string) (*Model, error) {
 	}
 	defer file.Close()
 
+	var vertices []Vertex
+	var normals []Normal
 	model := &Model{}
 	scanner := bufio.NewScanner(file)
 
@@ -45,15 +58,15 @@ func LoadOBJ(filepath string) (*Model, error) {
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse vertex: %w", err)
 			}
-			model.Vertices = append(model.Vertices, vertex)
+			vertices = append(vertices, vertex)
 		case strings.HasPrefix(line, "vn "):
 			normal, err := parseNormal(line)
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse normal: %w", err)
 			}
-			model.Normals = append(model.Normals, normal)
+			normals = append(normals, normal)
 		case strings.HasPrefix(line, "f "):
-			face, err := parseFace(line)
+			face, err := parseFace(line, vertices, normals)
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse face: %w", err)
 			}
@@ -110,40 +123,73 @@ func parseNormal(line string) (Normal, error) {
 	return Normal{X: x, Y: y, Z: z}, nil
 }
 
-func parseFace(line string) (Face, error) {
+func parseFace(line string, vertices []Vertex, normals []Normal) (Face, error) {
 	parts := strings.Fields(line)
-	if len(parts) < 4 {
-		return Face{}, fmt.Errorf("invalid face line: %s", line)
+	if len(parts) != 4 {
+		return Face{}, fmt.Errorf("invalid face line: %s, must have exactly 3 vertices", line)
 	}
-	indices := make([]int, 0, len(parts)-1)
-	for _, part := range parts[1:] {
-		vertexIndexStr := strings.Split(part, "/")[0]
-		vertexIndex, err := strconv.Atoi(vertexIndexStr)
-		if err != nil {
+
+	var faceVertices [3]Vertex
+	var faceNormal Normal
+	normalSet := false
+
+	for i, part := range parts[1:] {
+		indices := strings.Split(part, "/")
+		if len(indices) < 1 {
+			return Face{}, fmt.Errorf("invalid face element: %s", part)
+		}
+
+		// Vertex index
+		vertexIndex, err := strconv.Atoi(indices[0])
+		if err != nil || vertexIndex < 1 || vertexIndex > len(vertices) {
 			return Face{}, fmt.Errorf("invalid vertex index: %w", err)
 		}
-		indices = append(indices, vertexIndex-1)
+		faceVertices[i] = vertices[vertexIndex-1]
+
+		// Normal index
+		if len(indices) > 2 && len(indices[2]) > 0 {
+			if !normalSet { // Only set the normal once
+				normalIndex, err := strconv.Atoi(indices[2])
+				if err != nil || normalIndex < 1 || normalIndex > len(normals) {
+					return Face{}, fmt.Errorf("invalid normal index: %w", err)
+				}
+				faceNormal = normals[normalIndex-1]
+				normalSet = true
+			}
+		}
 	}
-	return Face{VertexIndices: indices}, nil
+
+	if !normalSet {
+		return Face{}, fmt.Errorf("face lacks normal index")
+	}
+
+	return Face{
+		Vertices: faceVertices,
+		Normal:   faceNormal,
+	}, nil
 }
 
 func (model *Model) CalculateCenter() {
-	if len(model.Vertices) == 0 {
+	if len(model.Faces) == 0 {
 		model.Center = Vertex{X: 0, Y: 0, Z: 0}
 		return
 	}
 
 	var sumX, sumY, sumZ float64
-	for _, vertex := range model.Vertices {
-		sumX += vertex.X
-		sumY += vertex.Y
-		sumZ += vertex.Z
+	var count int
+
+	for _, face := range model.Faces {
+		for _, vertex := range face.Vertices {
+			sumX += vertex.X
+			sumY += vertex.Y
+			sumZ += vertex.Z
+			count++
+		}
 	}
 
-	count := float64(len(model.Vertices))
 	model.Center = Vertex{
-		X: sumX / count,
-		Y: sumY / count,
-		Z: sumZ / count,
+		X: sumX / float64(count),
+		Y: sumY / float64(count),
+		Z: sumZ / float64(count),
 	}
 }

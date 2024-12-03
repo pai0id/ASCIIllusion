@@ -32,19 +32,21 @@ func renderModel(model *reader.Model, options *RenderOptions, image asciiser.Ima
 	centerY := float64(options.Height) / 2
 	scale := centerX / math.Tan(options.Fov*math.Pi/360)
 
-	projectedVertices := make([][2]int, len(model.Vertices))
-	for i, v := range model.Vertices {
-		px, py := perspectiveProject(v, scale, options.CameraDist)
-		projectedVertices[i] = [2]int{
-			int(math.Round(centerX + px)),
-			int(math.Round(centerY - py)),
-		}
-	}
-
 	for _, face := range model.Faces {
-		for i := 0; i < len(face.VertexIndices); i++ {
-			v1 := projectedVertices[face.VertexIndices[i]]
-			v2 := projectedVertices[face.VertexIndices[(i+1)%len(face.VertexIndices)]]
+		// Project vertices of the face
+		var projectedVertices [3][2]int
+		for i, vertex := range face.Vertices {
+			px, py := perspectiveProject(vertex, scale, options.CameraDist)
+			projectedVertices[i] = [2]int{
+				int(math.Round(centerX + px)),
+				int(math.Round(centerY - py)),
+			}
+		}
+
+		// Rasterize edges of the face
+		for i := 0; i < len(projectedVertices); i++ {
+			v1 := projectedVertices[i]
+			v2 := projectedVertices[(i+1)%len(projectedVertices)]
 			rasterizeLine(image, v1[0], v1[1], v2[0], v2[1])
 		}
 	}
@@ -88,49 +90,4 @@ func rasterizeLine(image asciiser.Image, x0, y0, x1, y1 int) {
 			y0 += sy
 		}
 	}
-}
-
-func OptimalCameraDist(models []*reader.Model, options *RenderOptions) float64 {
-	maxDist := 0.0
-	for _, model := range models {
-		var minX, minY, minZ = math.MaxFloat64, math.MaxFloat64, math.MaxFloat64
-		var maxX, maxY, maxZ = -math.MaxFloat64, -math.MaxFloat64, -math.MaxFloat64
-
-		for _, v := range model.Vertices {
-			if v.X < minX {
-				minX = v.X
-			}
-			if v.X > maxX {
-				maxX = v.X
-			}
-			if v.Y < minY {
-				minY = v.Y
-			}
-			if v.Y > maxY {
-				maxY = v.Y
-			}
-			if v.Z < minZ {
-				minZ = v.Z
-			}
-			if v.Z > maxZ {
-				maxZ = v.Z
-			}
-		}
-
-		width := maxX - minX
-		height := maxY - minY
-
-		centerX := float64(options.Width) / 2
-
-		scale := centerX / math.Tan(options.Fov*math.Pi/360)
-
-		distX := width * scale / float64(options.Width)
-		distY := height * scale / float64(options.Height)
-
-		res := 1.2 * (math.Max(distX, distY) + maxZ)
-		if res > maxDist {
-			maxDist = res
-		}
-	}
-	return maxDist
 }
