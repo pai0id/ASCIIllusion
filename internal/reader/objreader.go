@@ -24,6 +24,7 @@ type Model struct {
 	Vertices []Vertex
 	Normals  []Normal
 	Faces    []Face
+	Center   Vertex
 }
 
 func LoadOBJ(filepath string) (*Model, error) {
@@ -63,6 +64,8 @@ func LoadOBJ(filepath string) (*Model, error) {
 	if err := scanner.Err(); err != nil {
 		return nil, fmt.Errorf("error reading file: %w", err)
 	}
+
+	model.CalculateCenter()
 
 	return model, nil
 }
@@ -122,4 +125,25 @@ func parseFace(line string) (Face, error) {
 		indices = append(indices, vertexIndex-1)
 	}
 	return Face{VertexIndices: indices}, nil
+}
+
+func (model *Model) CalculateCenter() {
+	if len(model.Vertices) == 0 {
+		model.Center = Vertex{X: 0, Y: 0, Z: 0}
+		return
+	}
+
+	var sumX, sumY, sumZ float64
+	for _, vertex := range model.Vertices {
+		sumX += vertex.X
+		sumY += vertex.Y
+		sumZ += vertex.Z
+	}
+
+	count := float64(len(model.Vertices))
+	model.Center = Vertex{
+		X: sumX / count,
+		Y: sumY / count,
+		Z: sumZ / count,
+	}
 }

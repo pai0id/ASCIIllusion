@@ -20,41 +20,48 @@ func Translate(model *reader.Model, tx, ty, tz float64) {
 			Z: v.Z + tz,
 		}
 	}
+	model.Center.X += tx
+	model.Center.Y += ty
+	model.Center.Z += tz
 }
 
 func Scale(model *reader.Model, sx, sy, sz float64) {
+	cx, cy, cz := model.Center.X, model.Center.Y, model.Center.Z
 	for i, v := range model.Vertices {
 		model.Vertices[i] = reader.Vertex{
-			X: v.X * sx,
-			Y: v.Y * sy,
-			Z: v.Z * sz,
+			X: cx + (v.X-cx)*sx,
+			Y: cy + (v.Y-cy)*sy,
+			Z: cz + (v.Z-cz)*sz,
 		}
 	}
 }
 
 func Rotate(model *reader.Model, angle float64, axis int) {
+	cx, cy, cz := model.Center.X, model.Center.Y, model.Center.Z
 	rad := angle * math.Pi / 180
 	sin, cos := math.Sin(rad), math.Cos(rad)
 
 	for i, v := range model.Vertices {
+		x, y, z := v.X-cx, v.Y-cy, v.Z-cz
+
 		switch axis {
 		case XAxis:
 			model.Vertices[i] = reader.Vertex{
-				X: v.X,
-				Y: v.Y*cos - v.Z*sin,
-				Z: v.Y*sin + v.Z*cos,
+				X: cx + x,
+				Y: cy + y*cos - z*sin,
+				Z: cz + y*sin + z*cos,
 			}
 		case YAxis:
 			model.Vertices[i] = reader.Vertex{
-				X: v.Z*sin + v.X*cos,
-				Y: v.Y,
-				Z: v.Z*cos - v.X*sin,
+				X: cx + z*sin + x*cos,
+				Y: cy + y,
+				Z: cz + z*cos - x*sin,
 			}
 		case ZAxis:
 			model.Vertices[i] = reader.Vertex{
-				X: v.X*cos - v.Y*sin,
-				Y: v.X*sin + v.Y*cos,
-				Z: v.Z,
+				X: cx + x*cos - y*sin,
+				Y: cy + x*sin + y*cos,
+				Z: cz + z,
 			}
 		default:
 			panic("Invalid axis specified. Use XAxis, YAxis, or ZAxis")
