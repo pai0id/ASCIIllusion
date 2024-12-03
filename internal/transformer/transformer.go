@@ -13,6 +13,7 @@ const (
 )
 
 func Translate(model *reader.Model, tx, ty, tz float64) {
+	// Translate vertices
 	for _, face := range model.Faces {
 		for i, v := range face.Vertices {
 			face.Vertices[i] = reader.Vertex{
@@ -22,6 +23,7 @@ func Translate(model *reader.Model, tx, ty, tz float64) {
 			}
 		}
 	}
+	// Translate center
 	model.Center.X += tx
 	model.Center.Y += ty
 	model.Center.Z += tz
@@ -29,6 +31,7 @@ func Translate(model *reader.Model, tx, ty, tz float64) {
 
 func Scale(model *reader.Model, sx, sy, sz float64) {
 	cx, cy, cz := model.Center.X, model.Center.Y, model.Center.Z
+	// Scale vertices
 	for _, face := range model.Faces {
 		for i, v := range face.Vertices {
 			face.Vertices[i] = reader.Vertex{
@@ -38,6 +41,8 @@ func Scale(model *reader.Model, sx, sy, sz float64) {
 			}
 		}
 	}
+
+	// Do not scale normals (they should remain normalized)
 }
 
 func Rotate(model *reader.Model, angle float64, axis int) {
@@ -45,6 +50,7 @@ func Rotate(model *reader.Model, angle float64, axis int) {
 	rad := angle * math.Pi / 180
 	sin, cos := math.Sin(rad), math.Cos(rad)
 
+	// Rotate vertices
 	for _, face := range model.Faces {
 		for i, v := range face.Vertices {
 			x, y, z := v.X-cx, v.Y-cy, v.Z-cz
@@ -71,6 +77,31 @@ func Rotate(model *reader.Model, angle float64, axis int) {
 			default:
 				panic("Invalid axis specified. Use XAxis, YAxis, or ZAxis")
 			}
+		}
+	}
+
+	for _, face := range model.Faces {
+		switch axis {
+		case XAxis:
+			face.Normal = reader.Normal{
+				X: cx,
+				Y: cy*cos - cz*sin,
+				Z: cy*sin + cz*cos,
+			}
+		case YAxis:
+			face.Normal = reader.Normal{
+				X: cz*sin + cx*cos,
+				Y: cy,
+				Z: cz*cos - cx*sin,
+			}
+		case ZAxis:
+			face.Normal = reader.Normal{
+				X: cx*cos - cy*sin,
+				Y: cx*sin + cy*cos,
+				Z: cz,
+			}
+		default:
+			panic("Invalid axis specified. Use XAxis, YAxis, or ZAxis")
 		}
 	}
 }

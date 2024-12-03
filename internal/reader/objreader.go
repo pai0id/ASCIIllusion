@@ -29,7 +29,7 @@ func (n Normal) GetCoords() (float64, float64, float64) {
 }
 
 type Face struct {
-	Vertices [3]Vertex
+	Vertices []Vertex
 	Normal   Normal
 }
 
@@ -129,7 +129,7 @@ func parseFace(line string, vertices []Vertex, normals []Normal) (Face, error) {
 		return Face{}, fmt.Errorf("invalid face line: %s, must have exactly 3 vertices", line)
 	}
 
-	var faceVertices [3]Vertex
+	var faceVertices = make([]Vertex, 3)
 	var faceNormal Normal
 	normalSet := false
 
