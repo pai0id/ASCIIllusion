@@ -81,7 +81,7 @@ func main() {
 		m.SetMatrix(mtx)
 		return m, nil
 	}
-	initialModel := tui.NewModel(mtx, make(map[string]tui.Command, 10), resizeCmd)
+	initialModel := tui.NewModel(mtx, make(map[string]tui.TUICommand, 10), resizeCmd)
 
 	p := tea.NewProgram(initialModel, tea.WithAltScreen())
 	initialModel.AppendCommand("q", func(m tui.TUIModel) (tea.Model, tea.Cmd) { return m, tea.Quit })

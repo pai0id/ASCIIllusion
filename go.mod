@@ -2,20 +2,26 @@ module github.com/pai0id/CgCourseProject
 
 go 1.23.2
 
-require github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
+require (
+	github.com/charmbracelet/bubbletea v1.2.4
+	github.com/charmbracelet/harmonica v0.2.0
+	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
+)
 
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
-	github.com/charmbracelet/bubbletea v1.2.4 // indirect
-	github.com/charmbracelet/harmonica v0.2.0 // indirect
 	github.com/charmbracelet/lipgloss v1.0.0 // indirect
 	github.com/charmbracelet/x/ansi v0.4.5 // indirect
 	github.com/charmbracelet/x/term v0.2.1 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
+	github.com/gdamore/encoding v0.0.0-20151215212835-b23993cbb635 // indirect
+	github.com/gdamore/tcell v1.1.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
+	github.com/marcusolsson/tui-go v0.4.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
+	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
 	github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/muesli/termenv v0.15.2 // indirect
