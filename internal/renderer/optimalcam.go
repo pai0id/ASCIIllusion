@@ -4,11 +4,15 @@ import (
 	"math"
 
 	"github.com/pai0id/CgCourseProject/internal/reader"
+	"github.com/pai0id/CgCourseProject/internal/transformer"
 )
 
 func OptimalCameraDist(models []*reader.Model, options *RenderOptions) float64 {
 	maxDist := 0.0
-	for _, model := range models {
+	centerX := float64(options.Width) / 2
+	scale := centerX / math.Tan(options.Fov*math.Pi/360)
+	for _, m := range models {
+		model := transformer.Project(m, scale, options.CameraDist)
 		var minX, minY, minZ = math.MaxFloat64, math.MaxFloat64, math.MaxFloat64
 		var maxX, maxY, maxZ = -math.MaxFloat64, -math.MaxFloat64, -math.MaxFloat64
 
@@ -37,10 +41,6 @@ func OptimalCameraDist(models []*reader.Model, options *RenderOptions) float64 {
 
 		width := maxX - minX
 		height := maxY - minY
-
-		centerX := float64(options.Width) / 2
-
-		scale := centerX / math.Tan(options.Fov*math.Pi/360)
 
 		distX := width * scale / float64(options.Width)
 		distY := height * scale / float64(options.Height)

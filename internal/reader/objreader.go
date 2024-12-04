@@ -8,18 +8,19 @@ import (
 	"strings"
 )
 
-type Vertex struct {
+type Vec3 struct {
 	X, Y, Z float64
 }
 
 type Face struct {
-	Vertices []Vertex
-	Normal   Vertex
+	Vertices []Vec3
+	Normals  []Vec3
 }
 
 type Model struct {
-	Faces  []Face
-	Center Vertex
+	Faces       []Face
+	Center      Vec3
+	Skeletonize bool
 }
 
 func LoadOBJ(filepath string) (*Model, error) {
@@ -29,8 +30,8 @@ func LoadOBJ(filepath string) (*Model, error) {
 	}
 	defer file.Close()
 
-	var vertices []Vertex
-	var normals []Vertex
+	var vertices []Vec3
+	var normals []Vec3
 	model := &Model{}
 	scanner := bufio.NewScanner(file)
 
@@ -67,55 +68,54 @@ func LoadOBJ(filepath string) (*Model, error) {
 	return model, nil
 }
 
-func parseVertex(line string) (Vertex, error) {
+func parseVertex(line string) (Vec3, error) {
 	parts := strings.Fields(line)
 	if len(parts) < 4 {
-		return Vertex{}, fmt.Errorf("invalid vertex line: %s", line)
+		return Vec3{}, fmt.Errorf("invalid vertex line: %s", line)
 	}
 	x, err := strconv.ParseFloat(parts[1], 64)
 	if err != nil {
-		return Vertex{}, fmt.Errorf("invalid x coordinate: %w", err)
+		return Vec3{}, fmt.Errorf("invalid x coordinate: %w", err)
 	}
 	y, err := strconv.ParseFloat(parts[2], 64)
 	if err != nil {
-		return Vertex{}, fmt.Errorf("invalid y coordinate: %w", err)
+		return Vec3{}, fmt.Errorf("invalid y coordinate: %w", err)
 	}
 	z, err := strconv.ParseFloat(parts[3], 64)
 	if err != nil {
-		return Vertex{}, fmt.Errorf("invalid z coordinate: %w", err)
+		return Vec3{}, fmt.Errorf("invalid z coordinate: %w", err)
 	}
-	return Vertex{X: x, Y: y, Z: z}, nil
+	return Vec3{X: x, Y: y, Z: z}, nil
 }
 
-func parseNormal(line string) (Vertex, error) {
+func parseNormal(line string) (Vec3, error) {
 	parts := strings.Fields(line)
 	if len(parts) < 4 {
-		return Vertex{}, fmt.Errorf("invalid normal line: %s", line)
+		return Vec3{}, fmt.Errorf("invalid normal line: %s", line)
 	}
 	x, err := strconv.ParseFloat(parts[1], 64)
 	if err != nil {
-		return Vertex{}, fmt.Errorf("invalid x coordinate: %w", err)
+		return Vec3{}, fmt.Errorf("invalid x coordinate: %w", err)
 	}
 	y, err := strconv.ParseFloat(parts[2], 64)
 	if err != nil {
-		return Vertex{}, fmt.Errorf("invalid y coordinate: %w", err)
+		return Vec3{}, fmt.Errorf("invalid y coordinate: %w", err)
 	}
 	z, err := strconv.ParseFloat(parts[3], 64)
 	if err != nil {
-		return Vertex{}, fmt.Errorf("invalid z coordinate: %w", err)
+		return Vec3{}, fmt.Errorf("invalid z coordinate: %w", err)
 	}
-	return Vertex{X: x, Y: y, Z: z}, nil
+	return Vec3{X: x, Y: y, Z: z}, nil
 }
 
-func parseFace(line string, vertices []Vertex, normals []Vertex) (Face, error) {
+func parseFace(line string, vertices []Vec3, normals []Vec3) (Face, error) {
 	parts := strings.Fields(line)
 	if len(parts) != 4 {
 		return Face{}, fmt.Errorf("invalid face line: %s, must have exactly 3 vertices", line)
 	}
 
-	var faceVertices = make([]Vertex, 3)
-	var faceNormal Vertex
-	normalSet := false
+	var faceVertices = make([]Vec3, 3)
+	var faceNormals = make([]Vec3, 3)
 
 	for i, part := range parts[1:] {
 		indices := strings.Split(part, "/")
@@ -129,31 +129,22 @@ func parseFace(line string, vertices []Vertex, normals []Vertex) (Face, error) {
 		}
 		faceVertices[i] = vertices[vertexIndex-1]
 
-		if len(indices) > 2 && len(indices[2]) > 0 {
-			if !normalSet {
-				normalIndex, err := strconv.Atoi(indices[2])
-				if err != nil || normalIndex < 1 || normalIndex > len(normals) {
-					return Face{}, fmt.Errorf("invalid normal index: %w", err)
-				}
-				faceNormal = normals[normalIndex-1]
-				normalSet = true
-			}
+		normalIndex, err := strconv.Atoi(indices[2])
+		if err != nil || normalIndex < 1 || normalIndex > len(normals) {
+			return Face{}, fmt.Errorf("invalid normal index: %w", err)
 		}
-	}
-
-	if !normalSet {
-		return Face{}, fmt.Errorf("face lacks normal index")
+		faceNormals[i] = normals[normalIndex-1]
 	}
 
 	return Face{
 		Vertices: faceVertices,
-		Normal:   faceNormal,
+		Normals:  faceNormals,
 	}, nil
 }
 
 func (model *Model) CalculateCenter() {
 	if len(model.Faces) == 0 {
-		model.Center = Vertex{X: 0, Y: 0, Z: 0}
+		model.Center = Vec3{X: 0, Y: 0, Z: 0}
 		return
 	}
 
@@ -169,7 +160,7 @@ func (model *Model) CalculateCenter() {
 		}
 	}
 
-	model.Center = Vertex{
+	model.Center = Vec3{
 		X: sumX / float64(count),
 		Y: sumY / float64(count),
 		Z: sumZ / float64(count),

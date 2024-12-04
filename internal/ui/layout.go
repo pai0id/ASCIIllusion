@@ -10,11 +10,15 @@ import (
 type App struct {
 	ui     tui.UI
 	canvas *Canvas
+	output *tui.Label
 }
 
 func NewApp(tuictx *Context) *App {
 	canvas := NewCanvas(tuictx)
-	a := &App{canvas: canvas}
+
+	output := tui.NewLabel("Hello!")
+
+	a := &App{canvas: canvas, output: output}
 
 	entryField := NewEntryField(a.parseEntry)
 
@@ -22,6 +26,7 @@ func NewApp(tuictx *Context) *App {
 		canvas.Label,
 		tui.NewSpacer(),
 		entryField.Entry,
+		output,
 	)
 
 	ui, err := tui.New(root)
@@ -30,6 +35,8 @@ func NewApp(tuictx *Context) *App {
 	}
 
 	ui.SetKeybinding("q", func() { ui.Quit() })
+	ui.SetKeybinding("Esc", func() { ui.Quit() })
+	ui.SetKeybinding("Ctrl+c", func() { ui.Quit() })
 	a.ui = ui
 
 	go func() {

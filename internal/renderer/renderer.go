@@ -42,11 +42,12 @@ type polygon struct {
 type filledPolygon map[point]asciiser.Pixel
 
 type RenderOptions struct {
-	Width        int
-	Height       int
-	Fov          float64
-	CameraDist   float64
-	LightSources []reader.Vertex
+	Width           int
+	Height          int
+	Fov             float64
+	CameraDist      float64
+	LightSources    []reader.Vec3
+	LightSourcesIds []int64
 }
 
 type zBuffer [][]float64
@@ -151,7 +152,7 @@ func mapToScreenCoords(m *reader.Model, screenCenter point) *object {
 	for i, f := range m.Faces {
 		res.faces[i] = &face{
 			vertices: make([]point, len(f.Vertices)),
-			normal:   normal{f.Normal.X, f.Normal.Y, f.Normal.Z},
+			normal:   normal{f.Normals[0].X, f.Normals[0].Y, f.Normals[0].Z},
 		}
 		for j, v := range f.Vertices {
 			res.faces[i].vertices[j].x = int(math.Round(float64(screenCenter.x) + v.X))
@@ -162,7 +163,7 @@ func mapToScreenCoords(m *reader.Model, screenCenter point) *object {
 	return res
 }
 
-func vertIntensities(in <-chan *object, out chan<- *polygon, wg *sync.WaitGroup, lightSources []reader.Vertex, cameraDist float64) {
+func vertIntensities(in <-chan *object, out chan<- *polygon, wg *sync.WaitGroup, lightSources []reader.Vec3, cameraDist float64) {
 	defer wg.Done()
 
 	for obj := range in {
@@ -191,7 +192,7 @@ func mapToPolygons(f *face, its map[point]float64) *polygon {
 	return res
 }
 
-func calculateVertexIntensities(obj *object, lightSources []reader.Vertex, cameraDist float64) map[point]float64 {
+func calculateVertexIntensities(obj *object, lightSources []reader.Vec3, cameraDist float64) map[point]float64 {
 	vertexColors := make(map[point]float64)
 	normals := calculateVertexNormals(obj)
 
@@ -206,7 +207,7 @@ func calculateVertexIntensities(obj *object, lightSources []reader.Vertex, camer
 	return vertexColors
 }
 
-func calculateLighting(vertex point, normal normal, lightSources []reader.Vertex, cameraDist float64) float64 {
+func calculateLighting(vertex point, normal normal, lightSources []reader.Vec3, cameraDist float64) float64 {
 	ambient := ambientC
 	diffuseIntensity := diffuseIntensityC
 	specularIntensity := specularIntensityC

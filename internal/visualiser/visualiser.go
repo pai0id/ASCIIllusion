@@ -30,6 +30,7 @@ type visualiserConfig struct {
 
 type Visualiser struct {
 	objs          []*reader.Model
+	ids           []int64
 	dctx          *asciiser.DrawContext
 	renderOptions *renderer.RenderOptions
 	cfg           *visualiserConfig
@@ -67,7 +68,12 @@ func NewVisualiser(cfgFileName, sliceFileName, fontFileName string) (*Visualiser
 
 	v.dctx = dctx
 	v.objs = make([]*reader.Model, 0, 10)
-	v.renderOptions = &renderer.RenderOptions{Fov: fov, LightSources: make([]reader.Vertex, 0, 10)}
+	v.ids = make([]int64, 0, 10)
+	v.renderOptions = &renderer.RenderOptions{
+		Fov:             fov,
+		LightSources:    make([]reader.Vec3, 0, 10),
+		LightSourcesIds: make([]int64, 0, 10),
+	}
 
 	return v, nil
 }
@@ -92,20 +98,50 @@ func (v *Visualiser) readConfig(filename string) error {
 	return nil
 }
 
-func (v *Visualiser) AddObj(obj *reader.Model) {
+func (v *Visualiser) AddObj(obj *reader.Model, id int64) {
 	v.objs = append(v.objs, obj)
+	v.ids = append(v.ids, id)
 }
 
-func (v *Visualiser) TranslateObj(id int, tx, ty, tz float64) {
-	transformer.Translate(v.objs[id-1], tx, ty, tz)
+func (v *Visualiser) DeleteObj(id int64) error {
+	for i, vid := range v.ids {
+		if vid == id {
+			v.objs = append(v.objs[:i], v.objs[i+1:]...)
+			v.ids = append(v.ids[:i], v.ids[i+1:]...)
+			return nil
+		}
+	}
+	return fmt.Errorf("object with id %d not found", id)
 }
 
-func (v *Visualiser) ScaleObj(id int, sx, sy, sz float64) {
-	transformer.Scale(v.objs[id-1], sx, sy, sz)
+func (v *Visualiser) TranslateObj(id int64, tx, ty, tz float64) error {
+	for i, vid := range v.ids {
+		if vid == id {
+			transformer.Translate(v.objs[i], tx, ty, tz)
+			return nil
+		}
+	}
+	return fmt.Errorf("object with id %d not found", id)
 }
 
-func (v *Visualiser) RotateObj(id int, angle float64, axis int) {
-	transformer.Rotate(v.objs[id-1], angle, axis)
+func (v *Visualiser) ScaleObj(id int64, sx, sy, sz float64) error {
+	for i, vid := range v.ids {
+		if vid == id {
+			transformer.Scale(v.objs[i], sx, sy, sz)
+			return nil
+		}
+	}
+	return fmt.Errorf("object with id %d not found", id)
+}
+
+func (v *Visualiser) RotateObj(id int64, angle float64, axis int) error {
+	for i, vid := range v.ids {
+		if vid == id {
+			transformer.Rotate(v.objs[i], angle, axis)
+			return nil
+		}
+	}
+	return fmt.Errorf("object with id %d not found", id)
 }
 
 func (v *Visualiser) Reconvert() (asciiser.ASCIImtx, error) {
@@ -127,17 +163,29 @@ func (v *Visualiser) Reconvert() (asciiser.ASCIImtx, error) {
 	}
 }
 
-func (v *Visualiser) AddLightSource(x, y, z float64) {
-	v.renderOptions.LightSources = append(v.renderOptions.LightSources, reader.Vertex{X: x, Y: y, Z: z})
+func (v *Visualiser) AddLightSource(x, y, z float64, id int64) {
+	v.renderOptions.LightSources = append(v.renderOptions.LightSources, reader.Vec3{X: x, Y: y, Z: z})
+	v.renderOptions.LightSourcesIds = append(v.renderOptions.LightSourcesIds, id)
+}
+
+func (v *Visualiser) DeleteLightSource(id int64) error {
+	for i, lid := range v.renderOptions.LightSourcesIds {
+		if lid == id {
+			v.renderOptions.LightSources = append(v.renderOptions.LightSources[:i], v.renderOptions.LightSources[i+1:]...)
+			v.renderOptions.LightSourcesIds = append(v.renderOptions.LightSourcesIds[:i], v.renderOptions.LightSourcesIds[i+1:]...)
+			return nil
+		}
+	}
+	return fmt.Errorf("light source with id %d not found", id)
 }
 
 func (v *Visualiser) Resize(w, h int) {
 	v.renderOptions.Width = v.cfg.ImgWidth * w
 	v.renderOptions.Height = v.cfg.ImgHeight * h
-
-	v.renderOptions.CameraDist = renderer.OptimalCameraDist(v.objs, v.renderOptions)
 }
 
 func (v *Visualiser) OptimizeCamera() {
-	v.renderOptions.CameraDist = renderer.OptimalCameraDist(v.objs, v.renderOptions)
+	if len(v.objs) == 1 {
+		v.renderOptions.CameraDist = renderer.OptimalCameraDist(v.objs, v.renderOptions)
+	}
 }
