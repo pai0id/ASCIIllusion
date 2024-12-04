@@ -4,9 +4,8 @@ import "math"
 
 func calculateVertexNormals(obj *object) map[point]normal {
 	vertexNormals := make(map[point]normal)
-	vertexCounts := make(map[point]int) // Track how many faces share each vertex
+	vertexCounts := make(map[point]int)
 
-	// Accumulate normals for each vertex
 	for _, face := range obj.faces {
 		for _, vertex := range face.vertices {
 			n := vertexNormals[vertex]
@@ -19,7 +18,6 @@ func calculateVertexNormals(obj *object) map[point]normal {
 		}
 	}
 
-	// Normalize the accumulated normals
 	for vertex, normal := range vertexNormals {
 		count := float64(vertexCounts[vertex])
 		normal.x /= count
@@ -31,11 +29,10 @@ func calculateVertexNormals(obj *object) map[point]normal {
 	return vertexNormals
 }
 
-// Normalize a normal vector
 func normalizeNormal(n normal) normal {
 	length := math.Sqrt(n.x*n.x + n.y*n.y + n.z*n.z)
 	if length == 0 {
-		return normal{0, 0, 0} // Avoid division by zero
+		return normal{0, 0, 0}
 	}
 	return normal{n.x / length, n.y / length, n.z / length}
 }

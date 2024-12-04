@@ -14,7 +14,7 @@ import (
 	"github.com/pai0id/CgCourseProject/internal/transformer"
 )
 
-const fov = 60
+const fov = 1
 
 type visualiserConfig struct {
 	ImgWidth  int     `json:"imgWidth"`

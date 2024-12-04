@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	ambientC           = 0.1 // Ambient intensity (constant)
+	ambientC           = 0.1
 	diffuseIntensityC  = 0.0
 	specularIntensityC = 0.0
 )
@@ -86,7 +86,7 @@ func RenderModels(models []*reader.Model, options *RenderOptions) asciiser.Image
 	go start(models, projectQueue, &wg)
 
 	wg.Add(1)
-	go project(projectQueue, vertIntensitiesQueue, &wg, scale, options.CameraDist, point{x: int(centerX), y: int(centerY)})
+	go project(projectQueue, vertIntensitiesQueue, &wg, scale, options.CameraDist, point{x: int(centerX), y: int(centerY), z: options.CameraDist})
 
 	wg.Add(1)
 	go vertIntensities(vertIntensitiesQueue, fillQueue, &wg, options.LightSources, options.CameraDist)
@@ -108,10 +108,10 @@ func renderPolygons(fps []*filledPolygon, image asciiser.Image, zb zBuffer) {
 	for _, fp := range fps {
 		for pt, px := range *fp {
 			if pt.x >= 0 && pt.x < len(image[0]) && pt.y >= 0 && pt.y < len(image) {
-				// Check Z-buffer to decide whether to update
+
 				if pt.z < zb[pt.y][pt.x] {
-					zb[pt.y][pt.x] = pt.z  // Update Z-buffer with closer depth
-					image[pt.y][pt.x] = px // Update framebuffer with intensity
+					zb[pt.y][pt.x] = pt.z
+					image[pt.y][pt.x] = px
 				}
 			}
 		}
@@ -132,8 +132,9 @@ func start(models []*reader.Model, out chan<- *reader.Model, wg *sync.WaitGroup)
 func project(in <-chan *reader.Model, out chan<- *object, wg *sync.WaitGroup, scale, cameraDist float64, screenCenter point) {
 	defer wg.Done()
 	for m := range in {
-		newM := transformer.Project(m, scale, cameraDist)
+
 		if out != nil {
+			newM := transformer.Project(m, scale, cameraDist)
 			out <- mapToScreenCoords(newM, screenCenter)
 		}
 	}
@@ -217,14 +218,12 @@ func calculateLighting(vertex point, normal normal, lightSources []reader.Vertex
 		lightPos := vec3{light.X, light.Y, light.Z}
 		lightDir := normalize(subtract(lightPos, v))
 
-		// Diffuse Component
 		diffuse := math.Max(0, dot(n, lightDir))
 		diffuseIntensity += diffuse
 
-		// Specular Component (optional, for shininess effect)
 		reflection := subtract(vec3{2 * dot(n, lightDir) * n.x, 2 * dot(n, lightDir) * n.y, 2 * dot(n, lightDir) * n.z}, lightDir)
 		viewDir := normalize(subtract(vec3{0, 0, cameraDist}, v))
-		specular := math.Pow(math.Max(0, dot(reflection, viewDir)), 32) // Shininess factor
+		specular := math.Pow(math.Max(0, dot(reflection, viewDir)), 32)
 		specularIntensity += specular
 	}
 
@@ -249,14 +248,12 @@ func fill(in <-chan *polygon, out chan<- *filledPolygon, wg *sync.WaitGroup) {
 func rasterizePolygon(p *polygon) *filledPolygon {
 	filled := make(filledPolygon)
 
-	// Find the bounding box of the polygon
 	minY, maxY := math.MaxInt, math.MinInt
 	for _, v := range p.vertices {
 		minY = min(minY, v.y)
 		maxY = max(maxY, v.y)
 	}
 
-	// For each scanline (y)
 	for y := minY; y <= maxY; y++ {
 		var intersections []struct {
 			x         int
@@ -264,14 +261,12 @@ func rasterizePolygon(p *polygon) *filledPolygon {
 			intensity float64
 		}
 
-		// Find intersections of edges with this scanline
 		for i := 0; i < len(p.vertices); i++ {
 			v1 := p.vertices[i]
-			v2 := p.vertices[(i+1)%len(p.vertices)] // Wrap around to first vertex
+			v2 := p.vertices[(i+1)%len(p.vertices)]
 
-			// Check if the edge crosses the scanline
 			if (v1.y <= y && v2.y > y) || (v2.y <= y && v1.y > y) {
-				// Calculate the intersection point
+
 				t := float64(y-v1.y) / float64(v2.y-v1.y)
 				x := int(lerp(float64(v1.x), float64(v2.x), t))
 				z := lerp(v1.z, v2.z, t)
@@ -285,12 +280,10 @@ func rasterizePolygon(p *polygon) *filledPolygon {
 			}
 		}
 
-		// Sort intersections by x-coordinate
 		sort.Slice(intersections, func(i, j int) bool {
 			return intersections[i].x < intersections[j].x
 		})
 
-		// Fill pixels between pairs of intersections
 		for i := 0; i < len(intersections)-1; i += 2 {
 			xStart, xEnd := intersections[i].x, intersections[i+1].x
 			zStart, zEnd := intersections[i].z, intersections[i+1].z
@@ -309,12 +302,11 @@ func rasterizePolygon(p *polygon) *filledPolygon {
 }
 
 func rasterizeLines(p *polygon, fp *filledPolygon) {
-	// Iterate through each edge of the polygon
+
 	for i := 0; i < len(p.vertices); i++ {
 		v1 := p.vertices[i]
-		v2 := p.vertices[(i+1)%len(p.vertices)] // Wrap around to connect the last vertex to the first
+		v2 := p.vertices[(i+1)%len(p.vertices)]
 
-		// Use Bresenham's Line Algorithm to rasterize the edge
 		dx := abs(v2.x - v1.x)
 		dy := abs(v2.y - v1.y)
 		sx := 1
@@ -328,13 +320,11 @@ func rasterizeLines(p *polygon, fp *filledPolygon) {
 
 		err := dx - dy
 
-		// Rasterize the line
 		x, y, z := v1.x, v1.y, v1.z
 		for {
-			// Add the point to the filledPolygon with max intensity
+
 			(*fp)[point{x: x, y: y, z: z}] = asciiser.Pixel{Brightness: 1.0, IsLine: true}
 
-			// Check if we've reached the end of the line
 			if x == v2.x && y == v2.y {
 				break
 			}
@@ -349,8 +339,7 @@ func rasterizeLines(p *polygon, fp *filledPolygon) {
 				y += sy
 			}
 
-			// Interpolate the z-value along the edge
-			t := float64(abs(x-v1.x)) / float64(dx+1) // Normalize interpolation factor
+			t := float64(abs(x-v1.x)) / float64(dx+1)
 			z = lerp(v1.z, v2.z, t)
 		}
 	}

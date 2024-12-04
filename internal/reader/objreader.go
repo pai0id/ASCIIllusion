@@ -123,16 +123,14 @@ func parseFace(line string, vertices []Vertex, normals []Vertex) (Face, error) {
 			return Face{}, fmt.Errorf("invalid face element: %s", part)
 		}
 
-		// Vertex index
 		vertexIndex, err := strconv.Atoi(indices[0])
 		if err != nil || vertexIndex < 1 || vertexIndex > len(vertices) {
 			return Face{}, fmt.Errorf("invalid vertex index: %w", err)
 		}
 		faceVertices[i] = vertices[vertexIndex-1]
 
-		// Vertex index
 		if len(indices) > 2 && len(indices[2]) > 0 {
-			if !normalSet { // Only set the normal once
+			if !normalSet {
 				normalIndex, err := strconv.Atoi(indices[2])
 				if err != nil || normalIndex < 1 || normalIndex > len(normals) {
 					return Face{}, fmt.Errorf("invalid normal index: %w", err)
