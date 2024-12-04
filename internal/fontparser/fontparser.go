@@ -49,7 +49,7 @@ func renderCharToMatrix(ctx *freetype.Context, r rune, imgWidth, imgHeight int, 
 	img := image.NewRGBA(image.Rect(0, 0, imgWidth, imgHeight))
 	ctx.SetDst(img)
 
-	pt := freetype.Pt(2, int(ctx.PointToFixed(fontSize)>>6))
+	pt := freetype.Pt(0, int(ctx.PointToFixed(fontSize)>>6))
 	_, err := ctx.DrawString(string(r), pt)
 	if err != nil {
 		return nil, fmt.Errorf("error: failed to draw character %c: %v", r, err)
@@ -59,7 +59,7 @@ func renderCharToMatrix(ctx *freetype.Context, r rune, imgWidth, imgHeight int, 
 	for y := 0; y < imgHeight; y++ {
 		matrix[y] = make([]bool, imgWidth)
 		for x := 0; x < imgWidth; x++ {
-			r, g, b, a := img.At(x, y).RGBA()
+			r, g, b, a := img.At(x, y-1).RGBA()
 			if r+g+b+a > 0 {
 				matrix[y][x] = true
 			} else {

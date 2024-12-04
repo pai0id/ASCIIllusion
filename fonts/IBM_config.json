@@ -1,11 +1,11 @@
 {
-  "imgWidth": 48,
-  "imgHeight": 66,
-  "fontSize": 25.0,
-  "dpi": 144.0,
+  "imgWidth": 8,
+  "imgHeight": 10,
+  "fontSize": 8.0,
+  "dpi": 72.0,
   "horParts": 8,
-  "vertParts": 11,
+  "vertParts": 10,
   "phiParts": 4,
-  "rParts": 4,
-  "rMax": 66.0
+  "rParts": 5,
+  "rMax": 10.0
 }

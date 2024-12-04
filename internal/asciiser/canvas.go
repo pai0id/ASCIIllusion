@@ -8,9 +8,19 @@ import (
 	"github.com/pai0id/CgCourseProject/internal/fontparser"
 )
 
+type cellType [][]bool
+
+func (c cellType) clean() {
+	for i := range c {
+		for j := range c[i] {
+			c[i][j] = false
+		}
+	}
+}
+
 type CellInfo struct {
 	isLine     bool
-	cell       [][]bool
+	cell       cellType
 	brightness float64
 }
 
@@ -50,8 +60,11 @@ func SplitToCells(img Image, cellWidth, cellHeight int) (Canvas, error) {
 				cells[i][j].cell[k] = make([]bool, cellWidth)
 				for l := range cells[i][j].cell[k] {
 					p := img[i*cellHeight+k][j*cellWidth+l]
-					if p.IsLine {
+					if cells[i][j].isLine {
+						cells[i][j].cell[k][l] = p.IsLine
+					} else if p.IsLine {
 						cells[i][j].isLine = true
+						cells[i][j].cell.clean()
 						cells[i][j].cell[k][l] = true
 					} else {
 						cells[i][j].cell[k][l] = p.Brightness > 0
