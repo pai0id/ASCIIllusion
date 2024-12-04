@@ -7,20 +7,33 @@ import (
 	"github.com/pai0id/CgCourseProject/internal/asciiser/mapping"
 	"github.com/pai0id/CgCourseProject/internal/fontparser"
 	"github.com/pai0id/CgCourseProject/internal/reader"
-	"github.com/pai0id/CgCourseProject/internal/tui"
 )
 
 func main() {
-	mctx := mapping.NewContext(8, 11, 4, 4, 66)
+	mctx := mapping.NewContext(8, 11, 4, 4, 33)
 	chars, err := reader.ReadCharsTxt("fonts/slice.txt")
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
 	}
-	f, err := fontparser.GetFontMap("fonts/IBM.ttf", 48, 66, 25, 144, chars)
+	f, err := fontparser.GetFontMap("fonts/IBM.ttf", 24, 33, 25, 72, chars)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
+	}
+
+	for _, ch := range f {
+		for i := range ch {
+			for j := range ch[i] {
+				if ch[i][j] {
+					fmt.Print("@")
+				} else {
+					fmt.Print(" ")
+				}
+			}
+			fmt.Println()
+		}
+		fmt.Println("--------------------------------")
 	}
 
 	dctx := asciiser.NewDrawContext(mctx, f)
@@ -44,5 +57,12 @@ func main() {
 		fmt.Printf("Error: %v\n", err)
 		return
 	}
-	tui.DrawASCIImtr(mtx)
+
+	for i := range mtx {
+		for j := range mtx[i] {
+			fmt.Printf("%c", mtx[i][j])
+		}
+		fmt.Println()
+	}
+	fmt.Println()
 }

@@ -92,6 +92,26 @@ func (a *App) parseEntry(s string) {
 			a.canvas.ctx.v.ScaleObj(int(id), sx, sy, sz)
 			a.reload()
 		}
+	case "ls":
+		if len(parts) == 4 {
+			x, err := strconv.ParseFloat(parts[1], 64)
+			if err != nil {
+				a.canvas.SetText(fmt.Sprintf("error parsing x: %v\n", err))
+				return
+			}
+			y, err := strconv.ParseFloat(parts[2], 64)
+			if err != nil {
+				a.canvas.SetText(fmt.Sprintf("error parsing y: %v\n", err))
+				return
+			}
+			z, err := strconv.ParseFloat(parts[3], 64)
+			if err != nil {
+				a.canvas.SetText(fmt.Sprintf("error parsing z: %v\n", err))
+				return
+			}
+			a.canvas.ctx.v.AddLightSource(x, y, z)
+			a.reload()
+		}
 	default:
 		a.reload()
 	}

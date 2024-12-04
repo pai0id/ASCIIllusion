@@ -8,29 +8,13 @@ import (
 	"strings"
 )
 
-type Point interface {
-	GetCoords() (float64, float64, float64)
-}
-
 type Vertex struct {
 	X, Y, Z float64
 }
 
-func (v Vertex) GetCoords() (float64, float64, float64) {
-	return v.X, v.Y, v.Z
-}
-
-type Normal struct {
-	X, Y, Z float64
-}
-
-func (n Normal) GetCoords() (float64, float64, float64) {
-	return n.X, n.Y, n.Z
-}
-
 type Face struct {
 	Vertices []Vertex
-	Normal   Normal
+	Normal   Vertex
 }
 
 type Model struct {
@@ -46,7 +30,7 @@ func LoadOBJ(filepath string) (*Model, error) {
 	defer file.Close()
 
 	var vertices []Vertex
-	var normals []Normal
+	var normals []Vertex
 	model := &Model{}
 	scanner := bufio.NewScanner(file)
 
@@ -103,34 +87,34 @@ func parseVertex(line string) (Vertex, error) {
 	return Vertex{X: x, Y: y, Z: z}, nil
 }
 
-func parseNormal(line string) (Normal, error) {
+func parseNormal(line string) (Vertex, error) {
 	parts := strings.Fields(line)
 	if len(parts) < 4 {
-		return Normal{}, fmt.Errorf("invalid normal line: %s", line)
+		return Vertex{}, fmt.Errorf("invalid normal line: %s", line)
 	}
 	x, err := strconv.ParseFloat(parts[1], 64)
 	if err != nil {
-		return Normal{}, fmt.Errorf("invalid x coordinate: %w", err)
+		return Vertex{}, fmt.Errorf("invalid x coordinate: %w", err)
 	}
 	y, err := strconv.ParseFloat(parts[2], 64)
 	if err != nil {
-		return Normal{}, fmt.Errorf("invalid y coordinate: %w", err)
+		return Vertex{}, fmt.Errorf("invalid y coordinate: %w", err)
 	}
 	z, err := strconv.ParseFloat(parts[3], 64)
 	if err != nil {
-		return Normal{}, fmt.Errorf("invalid z coordinate: %w", err)
+		return Vertex{}, fmt.Errorf("invalid z coordinate: %w", err)
 	}
-	return Normal{X: x, Y: y, Z: z}, nil
+	return Vertex{X: x, Y: y, Z: z}, nil
 }
 
-func parseFace(line string, vertices []Vertex, normals []Normal) (Face, error) {
+func parseFace(line string, vertices []Vertex, normals []Vertex) (Face, error) {
 	parts := strings.Fields(line)
 	if len(parts) != 4 {
 		return Face{}, fmt.Errorf("invalid face line: %s, must have exactly 3 vertices", line)
 	}
 
 	var faceVertices = make([]Vertex, 3)
-	var faceNormal Normal
+	var faceNormal Vertex
 	normalSet := false
 
 	for i, part := range parts[1:] {
@@ -146,7 +130,7 @@ func parseFace(line string, vertices []Vertex, normals []Normal) (Face, error) {
 		}
 		faceVertices[i] = vertices[vertexIndex-1]
 
-		// Normal index
+		// Vertex index
 		if len(indices) > 2 && len(indices[2]) > 0 {
 			if !normalSet { // Only set the normal once
 				normalIndex, err := strconv.Atoi(indices[2])

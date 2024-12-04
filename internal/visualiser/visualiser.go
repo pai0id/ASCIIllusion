@@ -67,7 +67,7 @@ func NewVisualiser(cfgFileName, sliceFileName, fontFileName string) (*Visualiser
 
 	v.dctx = dctx
 	v.objs = make([]*reader.Model, 0, 10)
-	v.renderOptions = &renderer.RenderOptions{}
+	v.renderOptions = &renderer.RenderOptions{Fov: fov, LightSources: make([]reader.Vertex, 0, 10)}
 
 	return v, nil
 }
@@ -127,14 +127,15 @@ func (v *Visualiser) Reconvert() (asciiser.ASCIImtx, error) {
 	}
 }
 
+func (v *Visualiser) AddLightSource(x, y, z float64) {
+	v.renderOptions.LightSources = append(v.renderOptions.LightSources, reader.Vertex{X: x, Y: y, Z: z})
+}
+
 func (v *Visualiser) Resize(w, h int) {
-	options := renderer.RenderOptions{
-		Width:  v.cfg.ImgWidth * w,
-		Height: v.cfg.ImgHeight * h,
-		Fov:    fov,
-	}
-	options.CameraDist = renderer.OptimalCameraDist(v.objs, &options)
-	v.renderOptions = &options
+	v.renderOptions.Width = v.cfg.ImgWidth * w
+	v.renderOptions.Height = v.cfg.ImgHeight * h
+
+	v.renderOptions.CameraDist = renderer.OptimalCameraDist(v.objs, v.renderOptions)
 }
 
 func (v *Visualiser) OptimizeCamera() {
