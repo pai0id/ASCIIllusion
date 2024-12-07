@@ -20,6 +20,7 @@ func (c cellType) clean() {
 
 type CellInfo struct {
 	isLine     bool
+	isPolygon  bool
 	cell       cellType
 	brightness float64
 }
@@ -55,7 +56,7 @@ func SplitToCells(img Image, cellWidth, cellHeight int) (Canvas, error) {
 	for i := range cells {
 		cells[i] = make([]CellInfo, rowBlocks)
 		for j := range cells[i] {
-			cells[i][j] = CellInfo{cell: make([][]bool, cellHeight), isLine: false, brightness: 0}
+			cells[i][j] = CellInfo{cell: make([][]bool, cellHeight)}
 			for k := range cells[i][j].cell {
 				cells[i][j].cell[k] = make([]bool, cellWidth)
 				for l := range cells[i][j].cell[k] {
@@ -66,7 +67,8 @@ func SplitToCells(img Image, cellWidth, cellHeight int) (Canvas, error) {
 						cells[i][j].isLine = true
 						cells[i][j].cell.clean()
 						cells[i][j].cell[k][l] = true
-					} else {
+					} else if p.IsPolygon {
+						cells[i][j].isPolygon = true
 						cells[i][j].cell[k][l] = p.Brightness > 0
 						cells[i][j].brightness += p.Brightness
 					}
@@ -106,15 +108,17 @@ func (c Canvas) ConvertToASCII(ctx *DrawContext) (ASCIImtx, error) {
 						minch = ch
 					}
 				}
-			} else {
+			} else if c[i][j].isPolygon {
 				var mindelt float64 = math.MaxFloat64
 				for ch, b := range ctx.brightnessMap {
 					d := math.Abs(c[i][j].brightness - b)
 					if d < mindelt {
-						mindelt = b
+						mindelt = d
 						minch = ch
 					}
 				}
+			} else {
+				minch = ctx.bg
 			}
 			res[i][j] = minch
 		}

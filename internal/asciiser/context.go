@@ -30,14 +30,11 @@ func (c *DrawContext) SetBrightnessMap(fm map[fontparser.Char]fontparser.CharMat
 		}
 	}
 	c.bg = minch
+	delete(c.brightnessMap, c.bg)
 }
 
 func (c *DrawContext) SetShapeMap(ctx *mapping.ApproximationContext, fm map[fontparser.Char]fontparser.CharMatrix) {
 	c.shapeContext = ctx
-	bgMtx, ok := fm[c.bg]
-	delete(fm, c.bg)
 	c.shapeMap = mapping.GetShapeMap(ctx, fontMapToCellMap(fm))
-	if ok {
-		fm[c.bg] = bgMtx
-	}
+	delete(c.shapeMap, c.bg)
 }

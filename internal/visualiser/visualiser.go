@@ -14,7 +14,9 @@ import (
 	"github.com/pai0id/CgCourseProject/internal/transformer"
 )
 
-const fov = 1
+const fov = 60
+const zNear = 0.01
+const zFar = 1000.0
 
 type visualiserConfig struct {
 	ImgWidth  int     `json:"imgWidth"`
@@ -70,9 +72,13 @@ func NewVisualiser(cfgFileName, sliceFileName, fontFileName string) (*Visualiser
 	v.objs = make([]*reader.Model, 0, 10)
 	v.ids = make([]int64, 0, 10)
 	v.renderOptions = &renderer.RenderOptions{
-		Fov:             fov,
 		LightSources:    make([]reader.Vec3, 0, 10),
 		LightSourcesIds: make([]int64, 0, 10),
+	}
+	v.renderOptions.Cam = &renderer.Camera{
+		Fov:   fov,
+		ZNear: zNear,
+		ZFar:  zFar,
 	}
 
 	return v, nil
@@ -186,6 +192,6 @@ func (v *Visualiser) Resize(w, h int) {
 
 func (v *Visualiser) OptimizeCamera() {
 	if len(v.objs) == 1 {
-		v.renderOptions.CameraDist = renderer.OptimalCameraDist(v.objs, v.renderOptions)
+		v.renderOptions.Cam.Z = renderer.OptimalCameraDist(v.objs[0], v.renderOptions.Cam.Fov, float64(v.renderOptions.Width)/float64(v.renderOptions.Height))
 	}
 }

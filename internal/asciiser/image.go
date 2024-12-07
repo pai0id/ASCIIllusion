@@ -3,6 +3,7 @@ package asciiser
 type Pixel struct {
 	Brightness float64
 	IsLine     bool
+	IsPolygon  bool
 }
 
 type Image [][]Pixel

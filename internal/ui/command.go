@@ -16,6 +16,10 @@ func (a *App) parseEntry(s string) {
 	parts := strings.Split(s, " ")
 	cmd := parts[0]
 	switch cmd {
+	case "c":
+		parts = strings.Split("l data/cube.obj $", " ")
+		cmd = "l"
+		fallthrough
 	case "l":
 		if !(len(parts) == 2 || (len(parts) == 3 && parts[2] == "$")) {
 			a.output.SetText("Load command: l FILEPATH [$]")
@@ -158,6 +162,7 @@ func (a *App) parseEntry(s string) {
 			a.canvas.ctx.v.AddLightSource(x, y, z, lsId)
 			lsId++
 			a.reload()
+			a.output.SetText(fmt.Sprintf("Added light source with ID = %d", lsId-1))
 		}
 	case "rmls":
 		if len(parts) != 2 {
@@ -174,6 +179,7 @@ func (a *App) parseEntry(s string) {
 				return
 			}
 			a.reload()
+			a.output.SetText(fmt.Sprintf("Removed light source with ID = %d", id))
 		}
 	case "h":
 		helpMsg := "Help:\n"
@@ -186,7 +192,6 @@ func (a *App) parseEntry(s string) {
 		helpMsg += "Remove light source command: rmls ID\n"
 		helpMsg += "Quit command: q\n"
 		a.canvas.SetText(helpMsg)
-	case "q":
 	default:
 		a.reload()
 	}

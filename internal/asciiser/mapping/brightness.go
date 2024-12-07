@@ -1,6 +1,8 @@
 package mapping
 
-import "github.com/pai0id/CgCourseProject/internal/fontparser"
+import (
+	"github.com/pai0id/CgCourseProject/internal/fontparser"
+)
 
 func getCellCnt(c Cell) int {
 	cnt := 0
@@ -15,7 +17,7 @@ func getCellCnt(c Cell) int {
 	return cnt
 }
 
-func GetBrightnessMap(cs map[fontparser.Char]Cell) map[fontparser.Char]float64 { // [0, 100]
+func GetBrightnessMap(cs map[fontparser.Char]Cell) map[fontparser.Char]float64 {
 	res := make(map[fontparser.Char]float64, len(cs))
 	maxCnt := 0
 	for ch, c := range cs {
@@ -34,6 +36,6 @@ func GetBrightnessMap(cs map[fontparser.Char]Cell) map[fontparser.Char]float64 {
 	return res
 }
 
-func GetBrightness(c Cell) int { // [0, 100]
+func GetBrightness(c Cell) int {
 	return getCellCnt(c) / (len(c.GetData()) * len(c.GetData()[0]))
 }
