@@ -41,9 +41,9 @@ func NewApp(tuictx *Context) *App {
 
 	go func() {
 		for {
+			time.Sleep(time.Millisecond)
 			s := root.Size()
 			a.canvas.ctx.v.Resize(s.X, s.Y)
-			time.Sleep(time.Millisecond)
 		}
 	}()
 
@@ -51,6 +51,5 @@ func NewApp(tuictx *Context) *App {
 }
 
 func (a *App) Run() error {
-	time.Sleep(time.Millisecond)
 	return a.ui.Run()
 }

@@ -14,7 +14,7 @@ import (
 	"github.com/pai0id/CgCourseProject/internal/transformer"
 )
 
-const fov = 60
+const fov = 30
 const zNear = 0.01
 const zFar = 100.0
 
@@ -193,6 +193,11 @@ func (v *Visualiser) Resize(w, h int) {
 
 func (v *Visualiser) OptimizeCamera() {
 	if len(v.objs) == 1 {
-		v.renderOptions.Cam.Z = renderer.OptimalCameraDist(v.objs[0], v.renderOptions.Cam.Fov, v.renderOptions.Cam.Aspect)
+		z := renderer.OptimalCameraDist(v.objs[0], v.renderOptions.Cam.Fov, v.renderOptions.Cam.Aspect)
+		v.renderOptions.Cam.Z = z
 	}
+}
+
+func (v *Visualiser) MoveCam(d float64) {
+	v.renderOptions.Cam.Z += d
 }

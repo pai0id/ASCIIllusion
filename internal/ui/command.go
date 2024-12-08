@@ -181,6 +181,19 @@ func (a *App) parseEntry(s string) {
 			a.reload()
 			a.output.SetText(fmt.Sprintf("Removed light source with ID = %d", id))
 		}
+	case "mv":
+		if len(parts) != 2 {
+			a.output.SetText("Move camera command: mv DISTANCE")
+		} else {
+			d, err := strconv.ParseFloat(parts[1], 64)
+			if err != nil {
+				a.output.SetText(fmt.Sprintf("error parsing d: %v\n", err))
+				return
+			}
+			a.canvas.ctx.v.MoveCam(d)
+			a.reload()
+			a.output.SetText("Moved")
+		}
 	case "h":
 		helpMsg := "Help:\n"
 		helpMsg += "Load command: l FILEPATH\n"
@@ -190,6 +203,7 @@ func (a *App) parseEntry(s string) {
 		helpMsg += "Scale command: s ID sX sY sZ\n"
 		helpMsg += "Add light source command: ls X Y Z\n"
 		helpMsg += "Remove light source command: rmls ID\n"
+		helpMsg += "Move camera command: mv DISTANCE\n"
 		helpMsg += "Quit command: q\n"
 		a.canvas.SetText(helpMsg)
 	default:

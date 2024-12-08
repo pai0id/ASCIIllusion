@@ -26,7 +26,7 @@ func rasterization(in <-chan *reader.Model, out chan<- *face, wg *sync.WaitGroup
 }
 
 func NDCToScreen(vertex reader.Vec3, width, height int) point {
-	xScreen := -int(vertex.X) + width/2
-	yScreen := -int(vertex.Y) + height/2
+	xScreen := int(vertex.X) + width/2
+	yScreen := int(vertex.Y) + height/2
 	return point{x: xScreen, y: yScreen, z: vertex.Z}
 }

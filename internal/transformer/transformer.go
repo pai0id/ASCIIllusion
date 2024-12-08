@@ -1,7 +1,6 @@
 package transformer
 
 import (
-	"fmt"
 	"math"
 
 	"github.com/pai0id/CgCourseProject/internal/reader"
@@ -91,7 +90,7 @@ func ViewMatrix(cameraZ float64) Mat4 {
 	return Mat4{
 		{1, 0, 0, 0},
 		{0, 1, 0, 0},
-		{0, 0, 1, -cameraZ},
+		{0, 0, 1, cameraZ},
 		{0, 0, 0, 1},
 	}
 }
@@ -110,8 +109,7 @@ func PerspectiveMatrix(fov, aspect, near, far float64) Mat4 {
 	return m
 }
 
-func TransformModelToCamera(model *reader.Model, viewMatrix, projectionMatrix Mat4) *reader.Model {
-	fmt.Println(model)
+func TransformModelToCamera(model *reader.Model, viewMatrix Mat4) *reader.Model {
 	transformedModel := reader.Model{Skeletonize: model.Skeletonize}
 
 	for _, face := range model.Faces {
@@ -122,6 +120,20 @@ func TransformModelToCamera(model *reader.Model, viewMatrix, projectionMatrix Ma
 	}
 
 	ApplyTransformation(&transformedModel, viewMatrix, true)
+
+	return &transformedModel
+}
+
+func ProjectModel(model *reader.Model, projectionMatrix Mat4) *reader.Model {
+	transformedModel := reader.Model{Skeletonize: model.Skeletonize}
+
+	for _, face := range model.Faces {
+		transformedFace := reader.Face{}
+		transformedFace.Vertices = append(transformedFace.Vertices, face.Vertices...)
+		transformedFace.Normals = append(transformedFace.Normals, face.Normals...)
+		transformedModel.Faces = append(transformedModel.Faces, transformedFace)
+	}
+
 	ApplyTransformation(&transformedModel, projectionMatrix, false)
 
 	return &transformedModel

@@ -49,7 +49,7 @@ func OptimalCameraDist(m *reader.Model, fov, aspect float64) float64 {
 	tanHalfHor := math.Tan(horizontalFOV / 2)
 	distanceHorizontal := width / (2 * tanHalfHor)
 
-	return 0.8 * math.Max(0, math.Max(distanceVertical, distanceHorizontal))
+	return math.Max(0, math.Max(distanceVertical, distanceHorizontal))
 }
 
 func toRad(angle float64) float64 {

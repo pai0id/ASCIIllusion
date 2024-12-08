@@ -3,6 +3,7 @@ package reader
 import (
 	"bufio"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -161,8 +162,8 @@ func (model *Model) CalculateCenter() {
 	}
 
 	model.Center = Vec3{
-		X: sumX / float64(count),
-		Y: sumY / float64(count),
-		Z: sumZ / float64(count),
+		X: math.Round(sumX / float64(count)),
+		Y: math.Round(sumY / float64(count)),
+		Z: math.Round(sumZ / float64(count)),
 	}
 }
