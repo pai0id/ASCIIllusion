@@ -4,7 +4,7 @@ import (
 	"github.com/pai0id/CgCourseProject/internal/asciiser"
 )
 
-func render(polygons []polygon, img asciiser.Image, zb zBuffer) {
+func rendering(polygons []polygon, img asciiser.Image, zb zBuffer) {
 	h := len(img)
 	w := len(img[0])
 	for _, p := range polygons {

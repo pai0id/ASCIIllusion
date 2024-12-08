@@ -53,6 +53,7 @@ func barycentric(p point, a, b, c point) (float64, float64, float64) {
 	return u, v, w
 }
 
+// Задебажить
 func shading(in <-chan *face, out chan<- polygon, wg *sync.WaitGroup, lights []reader.Vec3) {
 	defer wg.Done()
 	for f := range in {

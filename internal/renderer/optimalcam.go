@@ -6,54 +6,52 @@ import (
 	"github.com/pai0id/CgCourseProject/internal/reader"
 )
 
-func OptimalCameraDist(m *reader.Model, fov, aspect float64) float64 {
-	bboxMin, bboxMax := reader.Vec3{}, reader.Vec3{}
+func CalculateBoundingBox(m *reader.Model) (reader.Vec3, reader.Vec3) {
+	min := reader.Vec3{X: math.MaxFloat64, Y: math.MaxFloat64, Z: math.MaxFloat64}
+	max := reader.Vec3{X: -math.MaxFloat64, Y: -math.MaxFloat64, Z: -math.MaxFloat64}
 
-	for _, f := range m.Faces {
-		for _, v := range f.Vertices {
-			bboxMin.X = math.Min(bboxMin.X, v.X)
-			bboxMin.Y = math.Min(bboxMin.Y, v.Y)
-			bboxMin.Z = math.Min(bboxMin.Z, v.Z)
-
-			bboxMax.X = math.Max(bboxMax.X, v.X)
-			bboxMax.Y = math.Max(bboxMax.Y, v.Y)
-			bboxMax.Z = math.Max(bboxMax.Z, v.Z)
+	for _, face := range m.Faces {
+		for _, vertex := range face.Vertices {
+			if vertex.X < min.X {
+				min.X = vertex.X
+			}
+			if vertex.Y < min.Y {
+				min.Y = vertex.Y
+			}
+			if vertex.Z < min.Z {
+				min.Z = vertex.Z
+			}
+			if vertex.X > max.X {
+				max.X = vertex.X
+			}
+			if vertex.Y > max.Y {
+				max.Y = vertex.Y
+			}
+			if vertex.Z > max.Z {
+				max.Z = vertex.Z
+			}
 		}
 	}
 
-	return calculateCameraZ(bboxMin, bboxMax, fov, aspect)
+	return min, max
 }
 
-func calculateCameraZ(bboxMin, bboxMax reader.Vec3, fov, aspect float64) float64 {
-	cx := (bboxMin.X + bboxMax.X) / 2
-	cy := (bboxMin.Y + bboxMax.Y) / 2
-	cz := (bboxMin.Z + bboxMax.Z) / 2
+func OptimalCameraDist(m *reader.Model, fov, aspect float64) float64 {
+	min, max := CalculateBoundingBox(m)
+	radFov := toRad(fov)
+	tanHalf := math.Tan(radFov / 2)
 
-	radius := 0.0
-	vertices := [][3]float64{
-		{bboxMin.X, bboxMin.Y, bboxMin.Z},
-		{bboxMin.X, bboxMin.Y, bboxMax.Z},
-		{bboxMin.X, bboxMax.Y, bboxMin.Z},
-		{bboxMin.X, bboxMax.Y, bboxMax.Z},
-		{bboxMax.X, bboxMin.Y, bboxMin.Z},
-		{bboxMax.X, bboxMin.Y, bboxMax.Z},
-		{bboxMax.X, bboxMax.Y, bboxMin.Z},
-		{bboxMax.X, bboxMax.Y, bboxMax.Z},
-	}
+	width := max.X - min.X
+	height := max.Y - min.Y
 
-	for _, v := range vertices {
-		dx, dy, dz := v[0]-cx, v[1]-cy, v[2]-cz
-		dist := math.Sqrt(dx*dx + dy*dy + dz*dz)
-		if dist > radius {
-			radius = dist
-		}
-	}
+	distanceVertical := height / (2 * tanHalf)
+	horizontalFOV := 2 * math.Atan(tanHalf*aspect)
+	tanHalfHor := math.Tan(horizontalFOV / 2)
+	distanceHorizontal := width / (2 * tanHalfHor)
 
-	fovHRad := fov * math.Pi / 180
+	return 0.8 * math.Max(0, math.Max(distanceVertical, distanceHorizontal))
+}
 
-	zCameraH := radius / math.Tan(fovHRad/2)
-	fovVRad := 2 * math.Atan(math.Tan(fovHRad/2)/aspect)
-	zCameraV := radius / math.Tan(fovVRad/2)
-
-	return math.Max(zCameraH, zCameraV)
+func toRad(angle float64) float64 {
+	return angle * math.Pi / 180.0
 }

@@ -16,18 +16,18 @@ import (
 
 const fov = 60
 const zNear = 0.01
-const zFar = 1000.0
+const zFar = 100.0
 
 type visualiserConfig struct {
-	ImgWidth  int     `json:"imgWidth"`
-	ImgHeight int     `json:"imgHeight"`
-	FontSize  float64 `json:"fontSize"`
-	DPI       float64 `json:"dpi"`
-	HorParts  int     `json:"horParts"`
-	VertParts int     `json:"vertParts"`
-	PhiParts  int     `json:"phiParts"`
-	RParts    int     `json:"rParts"`
-	RMax      float64 `json:"rMax"`
+	CharWidth  int     `json:"charWidth"`
+	CharHeight int     `json:"charHeight"`
+	FontSize   float64 `json:"fontSize"`
+	DPI        float64 `json:"dpi"`
+	HorParts   int     `json:"horParts"`
+	VertParts  int     `json:"vertParts"`
+	PhiParts   int     `json:"phiParts"`
+	RParts     int     `json:"rParts"`
+	RMax       float64 `json:"rMax"`
 }
 
 type Visualiser struct {
@@ -52,8 +52,8 @@ func NewVisualiser(cfgFileName, sliceFileName, fontFileName string) (*Visualiser
 
 	f, err := fontparser.GetFontMap(
 		fontFileName,
-		v.cfg.ImgWidth,
-		v.cfg.ImgHeight,
+		v.cfg.CharWidth,
+		v.cfg.CharHeight,
 		v.cfg.FontSize,
 		v.cfg.DPI,
 		chars)
@@ -76,9 +76,10 @@ func NewVisualiser(cfgFileName, sliceFileName, fontFileName string) (*Visualiser
 		LightSourcesIds: make([]int64, 0, 10),
 	}
 	v.renderOptions.Cam = &renderer.Camera{
-		Fov:   fov,
-		ZNear: zNear,
-		ZFar:  zFar,
+		Fov:    fov,
+		ZNear:  zNear,
+		ZFar:   zFar,
+		Aspect: float64(v.cfg.CharWidth) / float64(v.cfg.CharHeight),
 	}
 
 	return v, nil
@@ -153,7 +154,7 @@ func (v *Visualiser) RotateObj(id int64, angle float64, axis int) error {
 func (v *Visualiser) Reconvert() (asciiser.ASCIImtx, error) {
 	canvas := renderer.RenderModels(v.objs, v.renderOptions)
 
-	cells, err := asciiser.SplitToCells(canvas, v.cfg.ImgWidth, v.cfg.ImgHeight)
+	cells, err := asciiser.SplitToCells(canvas, v.cfg.CharWidth, v.cfg.CharHeight)
 	if err != nil {
 		return nil, fmt.Errorf("error: %w", err)
 	}
@@ -186,12 +187,12 @@ func (v *Visualiser) DeleteLightSource(id int64) error {
 }
 
 func (v *Visualiser) Resize(w, h int) {
-	v.renderOptions.Width = v.cfg.ImgWidth * w
-	v.renderOptions.Height = v.cfg.ImgHeight * h
+	v.renderOptions.Width = v.cfg.CharWidth * w
+	v.renderOptions.Height = v.cfg.CharHeight * h
 }
 
 func (v *Visualiser) OptimizeCamera() {
 	if len(v.objs) == 1 {
-		v.renderOptions.Cam.Z = renderer.OptimalCameraDist(v.objs[0], v.renderOptions.Cam.Fov, float64(v.renderOptions.Width)/float64(v.renderOptions.Height))
+		v.renderOptions.Cam.Z = renderer.OptimalCameraDist(v.objs[0], v.renderOptions.Cam.Fov, v.renderOptions.Cam.Aspect)
 	}
 }

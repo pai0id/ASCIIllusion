@@ -1,6 +1,7 @@
 package transformer
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/pai0id/CgCourseProject/internal/reader"
@@ -19,7 +20,7 @@ func ApplyTransformation(model *reader.Model, transformation Mat4, withNormals b
 		}
 		if withNormals {
 			for i, normal := range face.Normals {
-				face.Normals[i] = transformation.TransformNormal(normal)
+				face.Normals[i] = transformation.MultiplyVec3(normal)
 			}
 		}
 	}
@@ -42,7 +43,7 @@ func ScaleMatrix(sx, sy, sz float64) Mat4 {
 }
 
 func RotateMatrix(angle float64, axis int) Mat4 {
-	rad := angle * math.Pi / 180
+	rad := toRad(angle)
 	sin, cos := math.Sin(rad), math.Cos(rad)
 
 	m := IdentityMatrix()
@@ -73,8 +74,8 @@ func Scale(model *reader.Model, sx, sy, sz float64) {
 	scaleMatrix := ScaleMatrix(sx, sy, sz)
 	translateBack := TranslateMatrix(model.Center.X, model.Center.Y, model.Center.Z)
 
-	transformation := multiplyMatrices(translateBack, multiplyMatrices(scaleMatrix, translateToOrigin))
-	ApplyTransformation(model, transformation, true)
+	transformation := MultiplyMatrices(translateBack, MultiplyMatrices(scaleMatrix, translateToOrigin))
+	ApplyTransformation(model, transformation, !(sx == sy && sx == sz))
 }
 
 func Rotate(model *reader.Model, angle float64, axis int) {
@@ -82,7 +83,7 @@ func Rotate(model *reader.Model, angle float64, axis int) {
 	rotateMatrix := RotateMatrix(angle, axis)
 	translateBack := TranslateMatrix(model.Center.X, model.Center.Y, model.Center.Z)
 
-	transformation := multiplyMatrices(translateBack, multiplyMatrices(rotateMatrix, translateToOrigin))
+	transformation := MultiplyMatrices(translateBack, MultiplyMatrices(rotateMatrix, translateToOrigin))
 	ApplyTransformation(model, transformation, true)
 }
 
@@ -96,26 +97,21 @@ func ViewMatrix(cameraZ float64) Mat4 {
 }
 
 func PerspectiveMatrix(fov, aspect, near, far float64) Mat4 {
-	return Mat4{
-		{1, 0, 0, 0},
-		{0, 1, 0, 0},
-		{0, 0, 1, 0},
-		{0, 0, 0, 1},
-	}
-	// fovRad := fov * math.Pi / 180.0
-	// tanHalfFov := math.Tan(fovRad / 2.0)
+	radFov := toRad(fov)
+	f := 1.0 / math.Tan(radFov/2.0)
+	d := far - near
 
-	// m := Mat4{}
-	// m[0][0] = 1.0 / (tanHalfFov * aspect)
-	// m[1][1] = 1.0 / tanHalfFov
-	// m[2][2] = -(far + near) / (far - near)
-	// m[2][3] = -(2.0 * far * near) / (far - near)
-	// m[3][2] = -1.0
-	// m[3][3] = 0.0
-	// return m
+	m := Mat4{}
+	m[0][0] = f / aspect
+	m[1][1] = f
+	m[2][2] = (far + near) / d
+	m[2][3] = -1.0
+	m[3][2] = (2 * far * near) / d
+	return m
 }
 
 func TransformModelToCamera(model *reader.Model, viewMatrix, projectionMatrix Mat4) *reader.Model {
+	fmt.Println(model)
 	transformedModel := reader.Model{Skeletonize: model.Skeletonize}
 
 	for _, face := range model.Faces {
@@ -129,4 +125,8 @@ func TransformModelToCamera(model *reader.Model, viewMatrix, projectionMatrix Ma
 	ApplyTransformation(&transformedModel, projectionMatrix, false)
 
 	return &transformedModel
+}
+
+func toRad(deg float64) float64 {
+	return deg * math.Pi / 180.0
 }

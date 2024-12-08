@@ -1,10 +1,10 @@
 NAME ?= main
 
 run:
-	go run ./cmd/$(NAME)
+	CGO_ENABLED=0 go run ./cmd/$(NAME)
 
 build:
-	go build -o $(NAME).out ./cmd/$(NAME)
+	CGO_ENABLED=0 go build -o $(NAME).out ./cmd/$(NAME)
 
 tidy:
 	go mod tidy

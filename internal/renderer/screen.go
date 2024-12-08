@@ -6,7 +6,7 @@ import (
 	"github.com/pai0id/CgCourseProject/internal/reader"
 )
 
-func screen(in <-chan *reader.Model, out chan<- *face, wg *sync.WaitGroup, width, height int) {
+func rasterization(in <-chan *reader.Model, out chan<- *face, wg *sync.WaitGroup, width, height int) {
 	defer wg.Done()
 	for m := range in {
 		for _, f := range m.Faces {
@@ -26,7 +26,7 @@ func screen(in <-chan *reader.Model, out chan<- *face, wg *sync.WaitGroup, width
 }
 
 func NDCToScreen(vertex reader.Vec3, width, height int) point {
-	xScreen := int(vertex.X) + width/2
+	xScreen := -int(vertex.X) + width/2
 	yScreen := -int(vertex.Y) + height/2
 	return point{x: xScreen, y: yScreen, z: vertex.Z}
 }

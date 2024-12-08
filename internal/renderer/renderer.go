@@ -27,10 +27,11 @@ type face struct {
 type polygon map[point]asciiser.Pixel
 
 type Camera struct {
-	Fov   float64
-	Z     float64
-	ZFar  float64
-	ZNear float64
+	Fov    float64
+	Z      float64
+	ZFar   float64
+	ZNear  float64
+	Aspect float64
 }
 
 type RenderOptions struct {
@@ -62,13 +63,12 @@ func RenderModels(models []*reader.Model, options *RenderOptions) asciiser.Image
 	zb := newZBuffer(options.Width, options.Height)
 
 	viewMatrix := transformer.ViewMatrix(options.Cam.Z)
-	aspect := float64(options.Width) / float64(options.Height)
-	projectionMatrix := transformer.PerspectiveMatrix(options.Cam.Fov, aspect, options.Cam.ZNear, options.Cam.ZFar)
+	projectionMatrix := transformer.PerspectiveMatrix(options.Cam.Fov, options.Cam.Aspect, options.Cam.ZNear, options.Cam.ZFar)
 
-	projectQueue := make(chan *reader.Model, 10)
-	clippingQueue := make(chan *reader.Model, 10)
-	screenQueue := make(chan *reader.Model, 10)
-	gouraudQueue := make(chan *face, 100)
+	transformQueue := make(chan *reader.Model, 10)
+	clipQueue := make(chan *reader.Model, 10)
+	rasterizeQueue := make(chan *reader.Model, 10)
+	shadeQueue := make(chan *face, 100)
 	resQueue := make(chan polygon, 100)
 
 	var polygons []polygon
@@ -76,26 +76,26 @@ func RenderModels(models []*reader.Model, options *RenderOptions) asciiser.Image
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	go start(models, projectQueue, &wg)
+	go start(models, transformQueue, &wg)
 
 	wg.Add(1)
-	go project(projectQueue, clippingQueue, &wg, viewMatrix, projectionMatrix)
+	go transforming(transformQueue, clipQueue, &wg, viewMatrix, projectionMatrix)
 
 	wg.Add(1)
-	go clip(clippingQueue, screenQueue, &wg, options.Cam.ZNear, options.Cam.ZFar)
+	go clipping(clipQueue, rasterizeQueue, &wg, options.Cam.ZNear, options.Cam.ZFar)
 
 	wg.Add(1)
-	go screen(screenQueue, gouraudQueue, &wg, options.Width, options.Height)
+	go rasterization(rasterizeQueue, shadeQueue, &wg, options.Width, options.Height)
 
 	wg.Add(1)
-	go shading(gouraudQueue, resQueue, &wg, options.LightSources)
+	go shading(shadeQueue, resQueue, &wg, options.LightSources)
 
 	wg.Add(1)
 	go end(resQueue, &polygons, &wg)
 
 	wg.Wait()
 
-	render(polygons, image, zb)
+	rendering(polygons, image, zb)
 	return image
 }
 

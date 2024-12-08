@@ -32,7 +32,7 @@ func (m Mat4) MultiplyNormal(v reader.Vec3) reader.Vec3 {
 	return reader.Vec3{X: x, Y: y, Z: z}
 }
 
-func multiplyMatrices(a, b Mat4) Mat4 {
+func MultiplyMatrices(a, b Mat4) Mat4 {
 	var result Mat4
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 4; j++ {

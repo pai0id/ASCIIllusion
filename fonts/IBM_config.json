@@ -1,6 +1,6 @@
 {
-  "imgWidth": 8,
-  "imgHeight": 10,
+  "charWidth": 8,
+  "charHeight": 10,
   "fontSize": 8.0,
   "dpi": 72.0,
   "horParts": 8,
