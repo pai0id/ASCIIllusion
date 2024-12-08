@@ -15,18 +15,7 @@ func pointPlaneDistance(point reader.Vec3, plane plane) float64 {
 	return plane.A*point.X + plane.B*point.Y + plane.C*point.Z + plane.D
 }
 
-// func intersectEdgePlane(start, end reader.Vec3, plane plane) reader.Vec3 {
-// 	startDist := pointPlaneDistance(start, plane)
-// 	endDist := pointPlaneDistance(end, plane)
-// 	t := startDist / (startDist - endDist)
-// 	return reader.Vec3{
-// 		X: start.X + t*(end.X-start.X),
-// 		Y: start.Y + t*(end.Y-start.Y),
-// 		Z: start.Z + t*(end.Z-start.Z),
-// 	}
-// }
-
-func IntersectEdgePlaneWithNormal(
+func intersectEdgePlane(
 	start, end reader.Vec3,
 	startNormal, endNormal reader.Vec3,
 	plane plane,
@@ -57,7 +46,7 @@ func clipFace(face reader.Face, plane plane) reader.Face {
 
 			if previousDist < 0 {
 
-				intersection, interpolatedNormal := IntersectEdgePlaneWithNormal(
+				intersection, interpolatedNormal := intersectEdgePlane(
 					previousVertex, currentVertex, previousNormal, currentNormal, plane,
 				)
 				clippedVertices = append(clippedVertices, intersection)
@@ -68,7 +57,7 @@ func clipFace(face reader.Face, plane plane) reader.Face {
 			clippedNormals = append(clippedNormals, currentNormal)
 		} else if previousDist >= 0 {
 
-			intersection, interpolatedNormal := IntersectEdgePlaneWithNormal(
+			intersection, interpolatedNormal := intersectEdgePlane(
 				previousVertex, currentVertex, previousNormal, currentNormal, plane,
 			)
 			clippedVertices = append(clippedVertices, intersection)
@@ -105,12 +94,12 @@ func ClipAndTriangulate(f reader.Face, zNear, zFar, cameraWidth, cameraHeight fl
 	halfHeight := cameraHeight / 2
 
 	planes := []plane{
-		{0, 0, 1, -zNear},
-		{0, 0, -1, zFar},
 		{-1, 0, 0, halfWidth},
 		{1, 0, 0, halfWidth},
 		{0, -1, 0, halfHeight},
 		{0, 1, 0, halfHeight},
+		{0, 0, 1, -zNear},
+		{0, 0, -1, zFar},
 	}
 
 	clipped := f

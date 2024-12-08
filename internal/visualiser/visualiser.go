@@ -14,7 +14,7 @@ import (
 	"github.com/pai0id/CgCourseProject/internal/transformer"
 )
 
-const fov = 30
+const fov = 10
 const zNear = 0.01
 const zFar = 100.0
 
