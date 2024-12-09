@@ -119,7 +119,7 @@ func TransformModelToCamera(model *reader.Model, viewMatrix Mat4) *reader.Model 
 		transformedModel.Faces = append(transformedModel.Faces, transformedFace)
 	}
 
-	ApplyTransformation(&transformedModel, viewMatrix, true)
+	ApplyTransformation(&transformedModel, viewMatrix, false)
 
 	return &transformedModel
 }

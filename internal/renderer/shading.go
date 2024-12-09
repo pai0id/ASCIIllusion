@@ -1,34 +1,32 @@
 package renderer
 
 import (
-	"math"
 	"sync"
 
 	"github.com/pai0id/CgCourseProject/internal/asciiser"
-	"github.com/pai0id/CgCourseProject/internal/reader"
 )
 
-func dot(a, b normal) float64 {
-	return a.x*b.x + a.y*b.y + a.z*b.z
-}
+// func dot(a, b normal) float64 {
+// 	return a.x*b.x + a.y*b.y + a.z*b.z
+// }
 
-func normalize(n normal) normal {
-	length := math.Sqrt(n.x*n.x + n.y*n.y + n.z*n.z)
-	return normal{x: n.x / length, y: n.y / length, z: n.z / length}
-}
+// func normalize(n normal) normal {
+// 	length := math.Sqrt(n.x*n.x + n.y*n.y + n.z*n.z)
+// 	return normal{x: n.x / length, y: n.y / length, z: n.z / length}
+// }
 
-func calculateLighting(vertex point, n normal, lights []reader.Vec3) float64 {
-	lighting := 0.0
-	for _, l := range lights {
+// func calculateLighting(vertex point, n normal, lights []reader.Vec3) float64 {
+// 	lighting := 0.0
+// 	for _, l := range lights {
 
-		lightDir := normalize(normal{x: l.X - float64(vertex.x), y: l.Y - float64(vertex.y), z: l.Z - vertex.z})
+// 		lightDir := normalize(normal{x: l.X - float64(vertex.x), y: l.Y - float64(vertex.y), z: l.Z - vertex.z})
 
-		if dot(n, lightDir) > 0 {
-			lighting += dot(n, lightDir)
-		}
-	}
-	return lighting
-}
+// 		if dot(n, lightDir) > 0 {
+// 			lighting += dot(n, lightDir)
+// 		}
+// 	}
+// 	return lighting
+// }
 
 func barycentric(p point, a, b, c point) (float64, float64, float64) {
 	v0 := point{x: b.x - a.x, y: b.y - a.y}
@@ -54,15 +52,10 @@ func barycentric(p point, a, b, c point) (float64, float64, float64) {
 }
 
 // Задебажить
-func shading(in <-chan *face, out chan<- polygon, wg *sync.WaitGroup, lights []reader.Vec3) {
+func shading(in <-chan *face, out chan<- polygon, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for f := range in {
 		result := make(polygon, 100)
-
-		vertexLightings := make([]float64, len(f.vertices))
-		for i := 0; i < len(f.vertices); i++ {
-			vertexLightings[i] = calculateLighting(f.vertices[i], f.normals[i], lights)
-		}
 
 		xMin, xMax, yMin, yMax := boundingBox(f.vertices)
 
@@ -76,7 +69,7 @@ func shading(in <-chan *face, out chan<- polygon, wg *sync.WaitGroup, lights []r
 					z := u*f.vertices[0].z + v*f.vertices[1].z + w*f.vertices[2].z
 					p.z = z
 
-					lighting := u*vertexLightings[0] + v*vertexLightings[1] + w*vertexLightings[2]
+					lighting := u*f.vertexLightings[0] + v*f.vertexLightings[1] + w*f.vertexLightings[2]
 
 					result[p] = asciiser.Pixel{Brightness: lighting, IsPolygon: true}
 				}
@@ -86,12 +79,9 @@ func shading(in <-chan *face, out chan<- polygon, wg *sync.WaitGroup, lights []r
 		if f.skeletonize {
 			for i := range f.vertices {
 				p1, p2 := f.vertices[i], f.vertices[(i+1)%len(f.vertices)]
-				// n1, n2 := f.normals[i], f.normals[(i+1)%len(f.vertices)]
-				// if true || (n1.x/n2.x > 0 && equals(n1.x/n2.x, n1.y/n2.y) && equals(n1.x/n2.x, n1.z/n2.z)) {
 				for _, p := range calculateSegmentZ(p1, p2) {
 					result[p] = asciiser.Pixel{IsLine: true, Brightness: 1}
 				}
-				// }
 			}
 		}
 		out <- result

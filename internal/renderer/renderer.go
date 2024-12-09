@@ -19,9 +19,10 @@ type normal struct {
 }
 
 type face struct {
-	vertices    []point
-	normals     []normal
-	skeletonize bool
+	vertices        []point
+	normals         []normal
+	vertexLightings []float64
+	skeletonize     bool
 }
 
 type polygon map[point]asciiser.Pixel
@@ -67,7 +68,7 @@ func RenderModels(models []*reader.Model, options *RenderOptions) asciiser.Image
 
 	transformQueue := make(chan *reader.Model, 10)
 	clipQueue := make(chan *reader.Model, 10)
-	projectQueue := make(chan *reader.Model, 10)
+	// projectQueue := make(chan *reader.Model, 10)
 	rasterizeQueue := make(chan *reader.Model, 10)
 	shadeQueue := make(chan *face, 100)
 	resQueue := make(chan polygon, 100)
@@ -83,16 +84,16 @@ func RenderModels(models []*reader.Model, options *RenderOptions) asciiser.Image
 	go transforming(transformQueue, clipQueue, &wg, viewMatrix)
 
 	wg.Add(1)
-	go clipping(clipQueue, projectQueue, &wg, options.Cam.ZNear, options.Cam.ZFar, float64(options.Width), float64(options.Height))
+	go clipping(clipQueue, rasterizeQueue, &wg, options.Cam.ZNear, options.Cam.ZFar, float64(options.Width), float64(options.Height))
+
+	// wg.Add(1)
+	// go projecting(projectQueue, rasterizeQueue, &wg, projectionMatrix)
 
 	wg.Add(1)
-	go projecting(projectQueue, rasterizeQueue, &wg, projectionMatrix)
+	go rasterization(rasterizeQueue, shadeQueue, &wg, projectionMatrix, options.LightSources, options.Width, options.Height)
 
 	wg.Add(1)
-	go rasterization(rasterizeQueue, shadeQueue, &wg, options.Width, options.Height)
-
-	wg.Add(1)
-	go shading(shadeQueue, resQueue, &wg, options.LightSources)
+	go shading(shadeQueue, resQueue, &wg)
 
 	wg.Add(1)
 	go end(resQueue, &polygons, &wg)

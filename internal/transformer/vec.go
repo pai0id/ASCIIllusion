@@ -34,3 +34,15 @@ func InterpolateVec3(v1, v2 reader.Vec3, t float64) reader.Vec3 {
 		Z: v1.Z + t*(v2.Z-v1.Z),
 	}
 }
+
+func Length(v reader.Vec3) float64 {
+	return math.Sqrt(v.X*v.X + v.Y*v.Y + v.Z*v.Z)
+}
+
+func MultiplyScalar(v reader.Vec3, scalar float64) reader.Vec3 {
+	return reader.Vec3{
+		X: v.X * scalar,
+		Y: v.Y * scalar,
+		Z: v.Z * scalar,
+	}
+}

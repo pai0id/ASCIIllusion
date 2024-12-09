@@ -201,3 +201,7 @@ func (v *Visualiser) OptimizeCamera() {
 func (v *Visualiser) MoveCam(d float64) {
 	v.renderOptions.Cam.Z += d
 }
+
+func (v *Visualiser) GetCam() float64 {
+	return v.renderOptions.Cam.Z
+}

@@ -194,6 +194,13 @@ func (a *App) parseEntry(s string) {
 			a.reload()
 			a.output.SetText("Moved")
 		}
+	case "gc":
+		if len(parts) != 1 {
+			a.output.SetText("Get camera Z command: gc")
+		} else {
+			z := a.canvas.ctx.v.GetCam()
+			a.output.SetText(fmt.Sprintf("%f", z))
+		}
 	case "h":
 		helpMsg := "Help:\n"
 		helpMsg += "Load command: l FILEPATH\n"
@@ -204,6 +211,7 @@ func (a *App) parseEntry(s string) {
 		helpMsg += "Add light source command: ls X Y Z\n"
 		helpMsg += "Remove light source command: rmls ID\n"
 		helpMsg += "Move camera command: mv DISTANCE\n"
+		helpMsg += "Get camera Z command: gc\n"
 		helpMsg += "Quit command: q\n"
 		a.canvas.SetText(helpMsg)
 	default:
