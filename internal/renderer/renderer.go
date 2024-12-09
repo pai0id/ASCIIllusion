@@ -90,7 +90,7 @@ func RenderModels(models []*reader.Model, options *RenderOptions) asciiser.Image
 	// go projecting(projectQueue, rasterizeQueue, &wg, projectionMatrix)
 
 	wg.Add(1)
-	go rasterization(rasterizeQueue, shadeQueue, &wg, projectionMatrix, options.LightSources, options.Width, options.Height)
+	go rasterization(rasterizeQueue, shadeQueue, &wg, projectionMatrix, viewMatrix, options.LightSources, options.Width, options.Height)
 
 	wg.Add(1)
 	go shading(shadeQueue, resQueue, &wg)

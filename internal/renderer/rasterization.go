@@ -1,7 +1,6 @@
 package renderer
 
 import (
-	"fmt"
 	"math"
 	"sync"
 
@@ -21,7 +20,6 @@ func calculateLighting(point, normal reader.Vec3, lightSources []reader.Vec3) fl
 	for _, light := range lightSources {
 		lightDir := transformer.Normalize(transformer.Subtract(light, point))
 
-		fmt.Println(transformer.Dot(normal, lightDir))
 		if transformer.Dot(normal, lightDir) <= 0 {
 			continue
 		}
@@ -39,8 +37,12 @@ func calculateLighting(point, normal reader.Vec3, lightSources []reader.Vec3) fl
 	return math.Min(1, math.Max(0, totalLight))
 }
 
-func rasterization(in <-chan *reader.Model, out chan<- *face, wg *sync.WaitGroup, projectionMatrix transformer.Mat4, lights []reader.Vec3, width, height int) {
+func rasterization(in <-chan *reader.Model, out chan<- *face, wg *sync.WaitGroup, projectionMatrix, viewMatrix transformer.Mat4, oldLights []reader.Vec3, width, height int) {
 	defer wg.Done()
+	lights := make([]reader.Vec3, len(oldLights))
+	for i, l := range oldLights {
+		lights[i] = viewMatrix.MultiplyVec3(l)
+	}
 	for m := range in {
 		faceLightings := make([][]float64, len(m.Faces))
 		for k, f := range m.Faces {
