@@ -14,9 +14,9 @@ import (
 	"github.com/pai0id/CgCourseProject/internal/transformer"
 )
 
-const fov = 10
+const fov = 2
 const zNear = 0.01
-const zFar = 100.0
+const zFar = 1000.0
 
 type visualiserConfig struct {
 	CharWidth  int     `json:"charWidth"`
@@ -72,7 +72,7 @@ func NewVisualiser(cfgFileName, sliceFileName, fontFileName string) (*Visualiser
 	v.objs = make([]*reader.Model, 0, 10)
 	v.ids = make([]int64, 0, 10)
 	v.renderOptions = &renderer.RenderOptions{
-		LightSources:    make([]reader.Vec3, 0, 10),
+		LightSources:    make([]renderer.Light, 0, 10),
 		LightSourcesIds: make([]int64, 0, 10),
 	}
 	v.renderOptions.Cam = &renderer.Camera{
@@ -170,8 +170,8 @@ func (v *Visualiser) Reconvert() (asciiser.ASCIImtx, error) {
 	}
 }
 
-func (v *Visualiser) AddLightSource(x, y, z float64, id int64) {
-	v.renderOptions.LightSources = append(v.renderOptions.LightSources, reader.Vec3{X: x, Y: y, Z: z})
+func (v *Visualiser) AddLightSource(x, y, z, intensity float64, id int64) {
+	v.renderOptions.LightSources = append(v.renderOptions.LightSources, renderer.Light{Position: reader.Vec3{X: x, Y: y, Z: z}, Intensity: intensity})
 	v.renderOptions.LightSourcesIds = append(v.renderOptions.LightSourcesIds, id)
 }
 

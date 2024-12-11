@@ -9,27 +9,26 @@ import (
 )
 
 const shininessC = 32.0
-const intensityC = 0.5
 
-func calculateLighting(point, normal reader.Vec3, lightSources []reader.Vec3) float64 {
+func calculateLighting(point, normal reader.Vec3, lightSources []Light) float64 {
 	normal = transformer.Normalize(normal)
 	viewDirection := reader.Vec3{X: 0, Y: 0, Z: 1}
 
 	totalLight := 0.0
 
 	for _, light := range lightSources {
-		lightDir := transformer.Normalize(transformer.Subtract(light, point))
+		lightDir := transformer.Normalize(transformer.Subtract(light.Position, point))
 
 		if transformer.Dot(normal, lightDir) <= 0 {
 			continue
 		}
 
 		diffuseFactor := math.Max(0, transformer.Dot(normal, lightDir))
-		diffuse := intensityC * diffuseFactor
+		diffuse := light.Intensity * diffuseFactor
 
 		reflection := transformer.Normalize(transformer.Subtract(transformer.MultiplyScalar(normal, 2*diffuseFactor), lightDir))
 		specularFactor := math.Pow(math.Max(0, transformer.Dot(viewDirection, reflection)), shininessC)
-		specular := intensityC * specularFactor
+		specular := light.Intensity * specularFactor
 
 		totalLight += diffuse + specular
 	}
@@ -37,11 +36,12 @@ func calculateLighting(point, normal reader.Vec3, lightSources []reader.Vec3) fl
 	return math.Min(1, math.Max(0, totalLight))
 }
 
-func rasterization(in <-chan *reader.Model, out chan<- *face, wg *sync.WaitGroup, projectionMatrix, viewMatrix transformer.Mat4, oldLights []reader.Vec3, width, height int) {
+func rasterization(in <-chan *reader.Model, out chan<- *face, wg *sync.WaitGroup, projectionMatrix, viewMatrix transformer.Mat4, oldLights []Light, width, height int) {
 	defer wg.Done()
-	lights := make([]reader.Vec3, len(oldLights))
+	lights := make([]Light, len(oldLights))
 	for i, l := range oldLights {
-		lights[i] = viewMatrix.MultiplyVec3(l)
+		lights[i].Position = viewMatrix.MultiplyVec3(l.Position)
+		lights[i].Intensity = l.Intensity
 	}
 	for m := range in {
 		faceLightings := make([][]float64, len(m.Faces))
@@ -69,7 +69,7 @@ func rasterization(in <-chan *reader.Model, out chan<- *face, wg *sync.WaitGroup
 }
 
 func NDCToScreen(vertex reader.Vec3, width, height int) point {
-	xScreen := int(vertex.X) + width/2
-	yScreen := int(vertex.Y) + height/2
+	xScreen := -int(vertex.X) + width/2
+	yScreen := -int(vertex.Y) + height/2
 	return point{x: xScreen, y: yScreen, z: vertex.Z}
 }

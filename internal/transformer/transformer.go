@@ -90,7 +90,7 @@ func ViewMatrix(cameraZ float64) Mat4 {
 	return Mat4{
 		{1, 0, 0, 0},
 		{0, 1, 0, 0},
-		{0, 0, 1, cameraZ},
+		{0, 0, 1, -cameraZ},
 		{0, 0, 0, 1},
 	}
 }

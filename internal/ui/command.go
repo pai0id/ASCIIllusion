@@ -141,8 +141,8 @@ func (a *App) parseEntry(s string) {
 			a.output.SetText(fmt.Sprintf("Scaled object with ID = %d", id))
 		}
 	case "ls":
-		if len(parts) != 4 {
-			a.output.SetText("Add light source command: ls X Y Z")
+		if len(parts) != 5 {
+			a.output.SetText("Add light source command: ls X Y Z INTENSITY")
 		} else {
 			x, err := strconv.ParseFloat(parts[1], 64)
 			if err != nil {
@@ -159,7 +159,12 @@ func (a *App) parseEntry(s string) {
 				a.output.SetText(fmt.Sprintf("error parsing z: %v\n", err))
 				return
 			}
-			a.canvas.ctx.v.AddLightSource(x, y, z, lsId)
+			it, err := strconv.ParseFloat(parts[4], 64)
+			if err != nil || it > 1 || it < 0 {
+				a.output.SetText(fmt.Sprintf("error parsing INTENSITY: %v\n", err))
+				return
+			}
+			a.canvas.ctx.v.AddLightSource(x, y, z, it, lsId)
 			lsId++
 			a.reload()
 			a.output.SetText(fmt.Sprintf("Added light source with ID = %d", lsId-1))
@@ -208,7 +213,7 @@ func (a *App) parseEntry(s string) {
 		helpMsg += "Rotate command: r ID ANGLE AXIS(x/y/z)\n"
 		helpMsg += "Translate command: t ID tX tY tZ\n"
 		helpMsg += "Scale command: s ID sX sY sZ\n"
-		helpMsg += "Add light source command: ls X Y Z\n"
+		helpMsg += "Add light source command: ls X Y Z INTENSITY\n"
 		helpMsg += "Remove light source command: rmls ID\n"
 		helpMsg += "Move camera command: mv DISTANCE\n"
 		helpMsg += "Get camera Z command: gc\n"

@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	v, err := visualiser.NewVisualiser("./fonts/IBM_config.json", "./fonts/slice.json", "./fonts/IBM.ttf")
+	v, err := visualiser.NewVisualiser("./fonts/IBM_config_xfce.json", "./fonts/slice.json", "./fonts/IBM.ttf")
 	if err != nil {
 		log.Printf("error occured: %v", err)
 	}

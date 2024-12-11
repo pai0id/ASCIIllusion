@@ -1,0 +1,11 @@
+{
+  "charWidth": 8,
+  "charHeight": 8,
+  "fontSize": 6.0,
+  "dpi": 72.0,
+  "horParts": 8,
+  "vertParts": 8,
+  "phiParts": 16,
+  "rParts": 100,
+  "rMax": 5.0
+}

@@ -38,18 +38,23 @@ func CalculateBoundingBox(m *reader.Model) (reader.Vec3, reader.Vec3) {
 
 func OptimalCameraDist(m *reader.Model, fov, aspect float64) float64 {
 	min, max := CalculateBoundingBox(m)
-	radFov := toRad(fov)
-	tanHalf := math.Tan(radFov / 2)
 
-	width := max.X - min.X
-	height := max.Y - min.Y
+	depth := max.Z - min.Z
 
-	distanceVertical := height / (2 * tanHalf)
-	horizontalFOV := 2 * math.Atan(tanHalf*aspect)
-	tanHalfHor := math.Tan(horizontalFOV / 2)
-	distanceHorizontal := width / (2 * tanHalfHor)
+	return -(depth + 20)
 
-	return math.Max(0, math.Max(distanceVertical, distanceHorizontal))
+	// radFov := toRad(fov)
+	// tanHalf := math.Tan(radFov / 2)
+
+	// width := max.X - min.X
+	// height := max.Y - min.Y
+
+	// distanceVertical := height / (2 * tanHalf)
+	// horizontalFOV := 2 * math.Atan(tanHalf*aspect)
+	// tanHalfHor := math.Tan(horizontalFOV / 2)
+	// distanceHorizontal := width / (2 * tanHalfHor)
+
+	// return math.Max(0, math.Max(distanceVertical, distanceHorizontal))
 }
 
 func toRad(angle float64) float64 {

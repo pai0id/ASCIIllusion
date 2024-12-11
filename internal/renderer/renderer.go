@@ -35,11 +35,16 @@ type Camera struct {
 	Aspect float64
 }
 
+type Light struct {
+	Position  reader.Vec3
+	Intensity float64
+}
+
 type RenderOptions struct {
 	Width           int
 	Height          int
 	Cam             *Camera
-	LightSources    []reader.Vec3
+	LightSources    []Light
 	LightSourcesIds []int64
 }
 
