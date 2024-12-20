@@ -57,17 +57,6 @@ func (c *DrawContext) SetBrightnessMap(fm map[fontparser.Char]fontparser.CharMat
 	}
 	c.bg = minch
 	delete(c.brightnessMap, c.bg)
-	// half := halfMap(c.brightnessMap)
-	// for _, ch := range half {
-	// 	delete(fm, ch)
-	// 	delete(c.brightnessMap, ch)
-	// }
-	// half = halfMap(c.brightnessMap)
-	// for _, ch := range half {
-	// 	delete(fm, ch)
-	// 	delete(c.brightnessMap, ch)
-	// }
-	// c.brightnessMap[' '] = 0
 }
 
 func (c *DrawContext) SetShapeMap(ctx *mapping.ApproximationContext, fm map[fontparser.Char]fontparser.CharMatrix) {
