@@ -1,124 +1,74 @@
 import sys
-import os
-import math
+import argparse
 
-class Vec3:
-    def __init__(self, x, y, z):
-        self.x = x
-        self.y = y
-        self.z = z
-
-    def normalize(self):
-        length = math.sqrt(self.x**2 + self.y**2 + self.z**2)
-        if length > 0:
-            self.x /= length
-            self.y /= length
-            self.z /= length
-
-    def negate(self):
-        self.x = -self.x
-        self.y = -self.y
-        self.z = -self.z
-
-    def __str__(self):
-        return f"{self.x:.6f} {self.y:.6f} {self.z:.6f}"
-
-class Face:
-    def __init__(self, vertices):
-        self.vertices = vertices  # List of tuples: (vertex_index, texture_index, normal_index)
-
-    def triangulate(self):
-        if len(self.vertices) <= 3:
-            return [self]
-        triangles = []
-        for i in range(1, len(self.vertices) - 1):
-            triangles.append(Face([self.vertices[0], self.vertices[i], self.vertices[i + 1]]))
-        return triangles
-
-    def __str__(self):
-        return "f " + " ".join(
-            ["/".join(map(lambda x: str(x) if x is not None else "", vertex)) for vertex in self.vertices]
-        )
-
-def parse_obj(file_path):
+def read_obj(file_path):
     vertices = []
     normals = []
     faces = []
-
+    
     with open(file_path, 'r') as file:
         for line in file:
-            parts = line.strip().split()
-            if not parts or parts[0].startswith('#'):
-                continue
-            if parts[0] == 'v':
-                vertices.append(Vec3(*map(float, parts[1:])))
-            elif parts[0] == 'vn':
-                normals.append(Vec3(*map(float, parts[1:])))
-            elif parts[0] == 'f':
-                face_vertices = []
-                for part in parts[1:]:
-                    indices = part.split('/')
-                    vertex = tuple(int(indices[i]) if i < len(indices) and indices[i] else None for i in range(3))
-                    face_vertices.append(vertex)
-                faces.append(Face(face_vertices))
-
+            if line.startswith('v '):
+                parts = line.strip().split()
+                vertices.append(tuple(map(float, parts[1:])))
+            elif line.startswith('vn '):
+                parts = line.strip().split()
+                normals.append(tuple(map(float, parts[1:])))
+            elif line.startswith('f '):
+                parts = line.strip().split()
+                face = []
+                for p in parts[1:]:
+                    indices = p.split('/')
+                    vertex_idx = int(indices[0])
+                    normal_idx = int(indices[2]) if len(indices) > 2 and indices[2] else None
+                    face.append((vertex_idx, normal_idx))
+                faces.append(face)
+    
     return vertices, normals, faces
+
+def triangulate_faces(faces):
+    triangulated_faces = []
+
+    for face in faces:
+        if len(face) == 3:
+            triangulated_faces.append(face)
+        else:
+            for i in range(1, len(face) - 1):
+                triangulated_faces.append([face[0], face[i], face[i + 1]])
+
+    return triangulated_faces
 
 def write_obj(file_path, vertices, normals, faces):
     with open(file_path, 'w') as file:
-        for v in vertices:
-            file.write(f"v {v}\n")
-        for n in normals:
-            file.write(f"vn {n}\n")
-        for f in faces:
-            file.write(f"{f}\n")
+        for vertex in vertices:
+            file.write(f"v {vertex[0]} {vertex[1]} {vertex[2]}\n")
 
-def calculate_normal(face, vertices):
-    v1 = vertices[face.vertices[0][0] - 1]
-    v2 = vertices[face.vertices[1][0] - 1]
-    v3 = vertices[face.vertices[2][0] - 1]
+        for normal in normals:
+            file.write(f"vn {normal[0]} {normal[1]} {normal[2]}\n")
 
-    ux, uy, uz = v2.x - v1.x, v2.y - v1.y, v2.z - v1.z
-    vx, vy, vz = v3.x - v1.x, v3.y - v1.y, v3.z - v1.z
-
-    nx, ny, nz = uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx
-    normal = Vec3(nx, ny, nz)
-    normal.normalize()
-    normal.negate()
-    return normal
-
-def process_obj(input_file, output_file):
-    vertices, normals, faces = parse_obj(input_file)
-
-    if not normals:
-        normals = []
         for face in faces:
-            for vertex in face.vertices:
-                normal = calculate_normal(face, vertices)
-                normals.append(normal)
-
-    new_faces = []
-    for face in faces:
-        triangles = face.triangulate()
-        for triangle in triangles:
-            new_faces.append(triangle)
-
-    write_obj(output_file, vertices, normals, new_faces)
+            face_str = ' '.join(
+                f"{v_idx}//{n_idx}" if n_idx else f"{v_idx}"
+                for v_idx, n_idx in face
+            )
+            file.write(f"f {face_str}\n")
 
 def main():
-    if len(sys.argv) != 3:
-        print("Usage: python process_obj.py <input_file> <output_file>")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="Triangulate faces in an OBJ file, including normals.")
+    parser.add_argument("input_file", help="Path to the input OBJ file.")
+    parser.add_argument("output_file", help="Path to the output OBJ file.")
+    args = parser.parse_args()
 
-    input_file = sys.argv[1]
-    output_file = sys.argv[2]
+    input_file = args.input_file
+    output_file = args.output_file
 
-    if not os.path.exists(input_file):
-        print(f"Error: Input file '{input_file}' does not exist.")
-        sys.exit(1)
-
-    process_obj(input_file, output_file)
-    print(f"Processed OBJ saved to '{output_file}'")
+    try:
+        vertices, normals, faces = read_obj(input_file)
+        triangulated_faces = triangulate_faces(faces)
+        write_obj(output_file, vertices, normals, triangulated_faces)
+        print(f"Triangulated OBJ file with normals saved to {output_file}")
+    except Exception as e:
+        print(f"Error: {e}")
 
 if __name__ == "__main__":
     main()

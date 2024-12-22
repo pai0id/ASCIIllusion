@@ -27,6 +27,7 @@ func getLights(lMap map[int64]Light) []Light {
 	i := 0
 	for _, light := range lMap {
 		lights[i] = light
+		i++
 	}
 	return lights
 }

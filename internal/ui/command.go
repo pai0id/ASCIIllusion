@@ -162,7 +162,7 @@ func (a *App) parseEntry(s string) {
 			}
 			lsId := a.canvas.ctx.v.AddLightSource(x, y, z, it)
 			a.reload()
-			a.output.SetText(fmt.Sprintf("Added light source with ID = %d", lsId-1))
+			a.output.SetText(fmt.Sprintf("Added light source with ID = %d", lsId))
 		}
 	case "rmls":
 		if len(parts) != 2 {

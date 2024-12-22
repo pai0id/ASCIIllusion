@@ -7,8 +7,13 @@ import (
 	"github.com/pai0id/CgCourseProject/internal/object"
 )
 
-const shininessC = 32.0
-const ambientC = 0.0
+const (
+	shininessC     = 32.0
+	ambientC       = 0.0
+	attenConst     = 0.01
+	attenLinear    = 0.009
+	attenQuadratic = 0.0032
+)
 
 func calculateVertexIntensity(point, normal object.Vec3, lightSources []Light) float64 {
 	normal = normal.Normalize()
@@ -18,17 +23,20 @@ func calculateVertexIntensity(point, normal object.Vec3, lightSources []Light) f
 
 	for _, light := range lightSources {
 		lightDir := light.Position.Subtract(point).Normalize()
+		distance := light.Position.Subtract(point).Length()
+
+		attenuation := 1.0 / (attenConst + attenLinear*distance + attenQuadratic*distance*distance)
 
 		if normal.Dot(lightDir) <= 0 {
 			continue
 		}
 
 		diffuseFactor := math.Max(0, normal.Dot(lightDir))
-		diffuse := light.Intensity * diffuseFactor
+		diffuse := light.Intensity * diffuseFactor * attenuation
 
 		reflection := object.MultiplyScalar(normal, 2*diffuseFactor).Subtract(lightDir).Normalize()
 		specularFactor := math.Pow(math.Max(0, viewDirection.Dot(reflection)), shininessC)
-		specular := light.Intensity * specularFactor
+		specular := light.Intensity * specularFactor * attenuation
 
 		totalLight += diffuse + specular
 	}

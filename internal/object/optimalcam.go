@@ -5,5 +5,5 @@ func (m *Object) OptimalCameraDist() float64 {
 
 	depth := max.Z - min.Z
 
-	return -depth + min.Z
+	return -depth + min.Z - 10
 }
