@@ -3,7 +3,7 @@ package transformer
 import (
 	"math"
 
-	"github.com/pai0id/CgCourseProject/internal/reader"
+	"github.com/pai0id/CgCourseProject/internal/object"
 )
 
 const (
@@ -12,7 +12,7 @@ const (
 	ZAxis = 3
 )
 
-func ApplyTransformation(model *reader.Model, transformation Mat4, withNormals bool) {
+func ApplyTransformation(model *object.Object, transformation Mat4, withNormals bool) {
 	for _, face := range model.Faces {
 		for i, v := range face.Vertices {
 			face.Vertices[i] = transformation.MultiplyVec3(v)
@@ -62,13 +62,13 @@ func RotateMatrix(angle float64, axis int) Mat4 {
 	return m
 }
 
-func Translate(model *reader.Model, tx, ty, tz float64) {
+func Translate(model *object.Object, tx, ty, tz float64) {
 	transformation := TranslateMatrix(tx, ty, tz)
 	ApplyTransformation(model, transformation, false)
 	model.Center = transformation.MultiplyVec3(model.Center)
 }
 
-func Scale(model *reader.Model, sx, sy, sz float64) {
+func Scale(model *object.Object, sx, sy, sz float64) {
 	translateToOrigin := TranslateMatrix(-model.Center.X, -model.Center.Y, -model.Center.Z)
 	scaleMatrix := ScaleMatrix(sx, sy, sz)
 	translateBack := TranslateMatrix(model.Center.X, model.Center.Y, model.Center.Z)
@@ -77,7 +77,7 @@ func Scale(model *reader.Model, sx, sy, sz float64) {
 	ApplyTransformation(model, transformation, !(sx == sy && sx == sz))
 }
 
-func Rotate(model *reader.Model, angle float64, axis int) {
+func Rotate(model *object.Object, angle float64, axis int) {
 	translateToOrigin := TranslateMatrix(-model.Center.X, -model.Center.Y, -model.Center.Z)
 	rotateMatrix := RotateMatrix(angle, axis)
 	translateBack := TranslateMatrix(model.Center.X, model.Center.Y, model.Center.Z)
@@ -107,36 +107,6 @@ func PerspectiveMatrix(fov, aspect, near, far float64) Mat4 {
 	m[2][3] = -1.0
 	m[3][2] = (2 * far * near) / d
 	return m
-}
-
-func TransformModelToCamera(model *reader.Model, viewMatrix Mat4) *reader.Model {
-	transformedModel := reader.Model{Skeletonize: model.Skeletonize}
-
-	for _, face := range model.Faces {
-		transformedFace := reader.Face{}
-		transformedFace.Vertices = append(transformedFace.Vertices, face.Vertices...)
-		transformedFace.Normals = append(transformedFace.Normals, face.Normals...)
-		transformedModel.Faces = append(transformedModel.Faces, transformedFace)
-	}
-
-	ApplyTransformation(&transformedModel, viewMatrix, false)
-
-	return &transformedModel
-}
-
-func ProjectModel(model *reader.Model, projectionMatrix Mat4) *reader.Model {
-	transformedModel := reader.Model{Skeletonize: model.Skeletonize}
-
-	for _, face := range model.Faces {
-		transformedFace := reader.Face{}
-		transformedFace.Vertices = append(transformedFace.Vertices, face.Vertices...)
-		transformedFace.Normals = append(transformedFace.Normals, face.Normals...)
-		transformedModel.Faces = append(transformedModel.Faces, transformedFace)
-	}
-
-	ApplyTransformation(&transformedModel, projectionMatrix, false)
-
-	return &transformedModel
 }
 
 func toRad(deg float64) float64 {

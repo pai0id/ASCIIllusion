@@ -1,6 +1,6 @@
 package transformer
 
-import "github.com/pai0id/CgCourseProject/internal/reader"
+import "github.com/pai0id/CgCourseProject/internal/object"
 
 type Mat4 [4][4]float64
 
@@ -13,23 +13,23 @@ func IdentityMatrix() Mat4 {
 	}
 }
 
-func (m Mat4) MultiplyVec3(v reader.Vec3) reader.Vec3 {
+func (m Mat4) MultiplyVec3(v object.Vec3) object.Vec3 {
 	x := m[0][0]*v.X + m[0][1]*v.Y + m[0][2]*v.Z + m[0][3]
 	y := m[1][0]*v.X + m[1][1]*v.Y + m[1][2]*v.Z + m[1][3]
 	z := m[2][0]*v.X + m[2][1]*v.Y + m[2][2]*v.Z + m[2][3]
 	w := m[3][0]*v.X + m[3][1]*v.Y + m[3][2]*v.Z + m[3][3]
 
 	if w != 0 {
-		return reader.Vec3{X: x / w, Y: y / w, Z: z / w}
+		return object.Vec3{X: x / w, Y: y / w, Z: z / w}
 	}
-	return reader.Vec3{X: x, Y: y, Z: z}
+	return object.Vec3{X: x, Y: y, Z: z}
 }
 
-func (m Mat4) MultiplyNormal(v reader.Vec3) reader.Vec3 {
+func (m Mat4) MultiplyNormal(v object.Vec3) object.Vec3 {
 	x := m[0][0]*v.X + m[0][1]*v.Y + m[0][2]*v.Z
 	y := m[1][0]*v.X + m[1][1]*v.Y + m[1][2]*v.Z
 	z := m[2][0]*v.X + m[2][1]*v.Y + m[2][2]*v.Z
-	return reader.Vec3{X: x, Y: y, Z: z}
+	return object.Vec3{X: x, Y: y, Z: z}
 }
 
 func MultiplyMatrices(a, b Mat4) Mat4 {
@@ -44,7 +44,7 @@ func MultiplyMatrices(a, b Mat4) Mat4 {
 	return result
 }
 
-func (m Mat4) TransformNormal(normal reader.Vec3) reader.Vec3 {
+func (m Mat4) TransformNormal(normal object.Vec3) object.Vec3 {
 	var invTranspose Mat4
 	invTranspose[0][0] = m[0][0]
 	invTranspose[0][1] = m[1][0]
@@ -62,5 +62,5 @@ func (m Mat4) TransformNormal(normal reader.Vec3) reader.Vec3 {
 	y := invTranspose[1][0]*normal.X + invTranspose[1][1]*normal.Y + invTranspose[1][2]*normal.Z
 	z := invTranspose[2][0]*normal.X + invTranspose[2][1]*normal.Y + invTranspose[2][2]*normal.Z
 
-	return Normalize(reader.Vec3{X: x, Y: y, Z: z})
+	return object.Vec3{X: x, Y: y, Z: z}.Normalize()
 }

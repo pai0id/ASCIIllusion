@@ -11,3 +11,7 @@ tidy:
 
 clean:
 	rm *.out tmp
+
+default:
+	make build
+	./main.out -font-config=fonts/IBM_config_cool.json -slice=fonts/slice.json -font-file=fonts/IBM.ttf

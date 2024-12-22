@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/pai0id/CgCourseProject/internal/asciiser"
-	"github.com/pai0id/CgCourseProject/internal/reader"
+	"github.com/pai0id/CgCourseProject/internal/object"
 	"github.com/pai0id/CgCourseProject/internal/transformer"
 )
 
@@ -14,38 +14,11 @@ type point struct {
 	z    float64
 }
 
-type normal struct {
-	x, y, z float64
-}
-
-type face struct {
-	vertices        []point
-	normals         []normal
-	vertexLightings []float64
-	skeletonize     bool
-}
-
-type polygon map[point]asciiser.Pixel
-
-type Camera struct {
-	Fov    float64
-	Z      float64
-	ZFar   float64
-	ZNear  float64
-	Aspect float64
-}
-
-type Light struct {
-	Position  reader.Vec3
-	Intensity float64
-}
-
-type RenderOptions struct {
-	Width           int
-	Height          int
-	Cam             *Camera
-	LightSources    []Light
-	LightSourcesIds []int64
+type polygon struct {
+	vertices    []point
+	normals     []object.Vec3
+	intensities []float64
+	skeletonize bool
 }
 
 type zBuffer [][]float64
@@ -61,7 +34,7 @@ func newZBuffer(width, height int) zBuffer {
 	return zBuffer
 }
 
-func RenderModels(models []*reader.Model, options *RenderOptions) asciiser.Image {
+func RenderModels(models []*object.Object, options *RenderOptions) asciiser.Image {
 	if options.Width == 0 || options.Height == 0 {
 		return nil
 	}
@@ -71,59 +44,36 @@ func RenderModels(models []*reader.Model, options *RenderOptions) asciiser.Image
 	viewMatrix := transformer.ViewMatrix(options.Cam.Z)
 	projectionMatrix := transformer.PerspectiveMatrix(options.Cam.Fov, options.Cam.Aspect, options.Cam.ZNear, options.Cam.ZFar)
 
-	transformQueue := make(chan *reader.Model, 10)
-	clipQueue := make(chan *reader.Model, 10)
-	// projectQueue := make(chan *reader.Model, 10)
-	rasterizeQueue := make(chan *reader.Model, 10)
-	shadeQueue := make(chan *face, 100)
-	resQueue := make(chan polygon, 100)
-
-	var polygons []polygon
+	calcIntensityQueue := make(chan *object.Face, 100)
+	camerizeQueue := make(chan *object.Face, 100)
+	projectQueue := make(chan *object.Face, 100)
+	// clipQueue := make(chan *object.Face, 100)
+	screenQueue := make(chan *object.Face, 100)
+	rasterizeQueue := make(chan *polygon, 100)
 
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	go start(models, transformQueue, &wg)
+	go enface(models, calcIntensityQueue, &wg)
 
 	wg.Add(1)
-	go transforming(transformQueue, clipQueue, &wg, viewMatrix)
+	go calcIntensity(calcIntensityQueue, camerizeQueue, &wg, getLights(options.LightSources))
 
 	wg.Add(1)
-	go clipping(clipQueue, rasterizeQueue, &wg, options.Cam.ZNear, options.Cam.ZFar, float64(options.Width), float64(options.Height))
+	go camerize(camerizeQueue, projectQueue, &wg, viewMatrix)
+
+	wg.Add(1)
+	go project(projectQueue, screenQueue, &wg, projectionMatrix)
 
 	// wg.Add(1)
-	// go projecting(projectQueue, rasterizeQueue, &wg, projectionMatrix)
+	// go clip(clipQueue, screenQueue, &wg, options.Cam.ZNear, options.Cam.ZFar, float64(options.Width), float64(options.Height))
 
 	wg.Add(1)
-	go rasterization(rasterizeQueue, shadeQueue, &wg, projectionMatrix, viewMatrix, options.LightSources, options.Width, options.Height)
+	go screen(screenQueue, rasterizeQueue, &wg, options.Width, options.Height)
 
 	wg.Add(1)
-	go shading(shadeQueue, resQueue, &wg)
-
-	wg.Add(1)
-	go end(resQueue, &polygons, &wg)
+	go rasterize(rasterizeQueue, &wg, image, zb)
 
 	wg.Wait()
-
-	rendering(polygons, image, zb)
 	return image
-}
-
-func start(models []*reader.Model, out chan<- *reader.Model, wg *sync.WaitGroup) {
-	defer wg.Done()
-	for _, m := range models {
-		out <- m
-	}
-
-	if out != nil {
-		close(out)
-	}
-}
-
-func end(in <-chan polygon, res *[]polygon, wg *sync.WaitGroup) {
-	defer wg.Done()
-
-	for p := range in {
-		*res = append(*res, p)
-	}
 }

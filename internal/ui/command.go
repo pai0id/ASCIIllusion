@@ -9,9 +9,6 @@ import (
 	"github.com/pai0id/CgCourseProject/internal/transformer"
 )
 
-var objId int64 = 1
-var lsId int64 = 1
-
 func (a *App) parseEntry(s string) {
 	parts := strings.Split(s, " ")
 	cmd := parts[0]
@@ -30,14 +27,13 @@ func (a *App) parseEntry(s string) {
 				return
 			}
 			if len(parts) == 3 {
-				obj.Skeletonize = true
+				obj.Skeletonize()
 			}
-			a.canvas.ctx.v.AddObj(obj, objId)
+			objId := a.canvas.ctx.v.AddObj(obj)
 
 			a.canvas.ctx.v.OptimizeCamera()
 			a.reload()
 			a.output.SetText(fmt.Sprintf("Load complete: ID = %d", objId))
-			objId++
 		}
 	case "rm":
 		if len(parts) != 2 {
@@ -164,8 +160,7 @@ func (a *App) parseEntry(s string) {
 				a.output.SetText(fmt.Sprintf("error parsing INTENSITY: %v\n", err))
 				return
 			}
-			a.canvas.ctx.v.AddLightSource(x, y, z, it, lsId)
-			lsId++
+			lsId := a.canvas.ctx.v.AddLightSource(x, y, z, it)
 			a.reload()
 			a.output.SetText(fmt.Sprintf("Added light source with ID = %d", lsId-1))
 		}

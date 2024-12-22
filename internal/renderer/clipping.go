@@ -1,129 +1,128 @@
 package renderer
 
-import (
-	"sync"
+// import (
+// 	"sync"
 
-	"github.com/pai0id/CgCourseProject/internal/reader"
-	"github.com/pai0id/CgCourseProject/internal/transformer"
-)
+// 	"github.com/pai0id/CgCourseProject/internal/object"
+// )
 
-type plane struct {
-	A, B, C, D float64
-}
+// type plane struct {
+// 	A, B, C, D float64
+// }
 
-func pointPlaneDistance(point reader.Vec3, plane plane) float64 {
-	return plane.A*point.X + plane.B*point.Y + plane.C*point.Z + plane.D
-}
+// func pointPlaneDistance(point object.Vec3, plane plane) float64 {
+// 	return plane.A*point.X + plane.B*point.Y + plane.C*point.Z + plane.D
+// }
 
-func intersectEdgePlane(
-	start, end reader.Vec3,
-	startNormal, endNormal reader.Vec3,
-	plane plane,
-) (reader.Vec3, reader.Vec3) {
-	startDist := pointPlaneDistance(start, plane)
-	endDist := pointPlaneDistance(end, plane)
-	t := startDist / (startDist - endDist)
+// func intersectEdgePlane(
+// 	start, end object.Vec3,
+// 	startNormal, endNormal object.Vec3,
+// 	plane plane,
+// ) (object.Vec3, object.Vec3) {
+// 	startDist := pointPlaneDistance(start, plane)
+// 	endDist := pointPlaneDistance(end, plane)
+// 	t := startDist / (startDist - endDist)
 
-	intersection := transformer.InterpolateVec3(start, end, t)
-	interpolatedNormal := transformer.InterpolateVec3(startNormal, endNormal, t)
-	return intersection, interpolatedNormal
-}
+// 	intersection := object.InterpolateVec3(start, end, t)
+// 	interpolatedNormal := object.InterpolateVec3(startNormal, endNormal, t)
+// 	return intersection, interpolatedNormal
+// }
 
-func clipFace(face reader.Face, plane plane) reader.Face {
-	clippedVertices := make([]reader.Vec3, 0, 4)
-	clippedNormals := make([]reader.Vec3, 0, 4)
+// func clipFace(face object.Face, plane plane) object.Face {
+// 	clippedVertices := make([]object.Vec3, 0, 4)
+// 	clippedNormals := make([]object.Vec3, 0, 4)
 
-	for i := 0; i < len(face.Vertices); i++ {
-		currentVertex := face.Vertices[i]
-		previousVertex := face.Vertices[(i+len(face.Vertices)-1)%len(face.Vertices)]
-		currentNormal := face.Normals[i]
-		previousNormal := face.Normals[(i+len(face.Normals)-1)%len(face.Normals)]
+// 	for i := 0; i < len(face.Vertices); i++ {
+// 		currentVertex := face.Vertices[i]
+// 		previousVertex := face.Vertices[(i+len(face.Vertices)-1)%len(face.Vertices)]
+// 		currentNormal := face.Normals[i]
+// 		previousNormal := face.Normals[(i+len(face.Normals)-1)%len(face.Normals)]
 
-		currentDist := pointPlaneDistance(currentVertex, plane)
-		previousDist := pointPlaneDistance(previousVertex, plane)
+// 		currentDist := pointPlaneDistance(currentVertex, plane)
+// 		previousDist := pointPlaneDistance(previousVertex, plane)
 
-		if currentDist >= 0 {
+// 		if currentDist >= 0 {
 
-			if previousDist < 0 {
+// 			if previousDist < 0 {
 
-				intersection, interpolatedNormal := intersectEdgePlane(
-					previousVertex, currentVertex, previousNormal, currentNormal, plane,
-				)
-				clippedVertices = append(clippedVertices, intersection)
-				clippedNormals = append(clippedNormals, interpolatedNormal)
-			}
+// 				intersection, interpolatedNormal := intersectEdgePlane(
+// 					previousVertex, currentVertex, previousNormal, currentNormal, plane,
+// 				)
+// 				clippedVertices = append(clippedVertices, intersection)
+// 				clippedNormals = append(clippedNormals, interpolatedNormal)
+// 			}
 
-			clippedVertices = append(clippedVertices, currentVertex)
-			clippedNormals = append(clippedNormals, currentNormal)
-		} else if previousDist >= 0 {
+// 			clippedVertices = append(clippedVertices, currentVertex)
+// 			clippedNormals = append(clippedNormals, currentNormal)
+// 		} else if previousDist >= 0 {
 
-			intersection, interpolatedNormal := intersectEdgePlane(
-				previousVertex, currentVertex, previousNormal, currentNormal, plane,
-			)
-			clippedVertices = append(clippedVertices, intersection)
-			clippedNormals = append(clippedNormals, interpolatedNormal)
-		}
-	}
+// 			intersection, interpolatedNormal := intersectEdgePlane(
+// 				previousVertex, currentVertex, previousNormal, currentNormal, plane,
+// 			)
+// 			clippedVertices = append(clippedVertices, intersection)
+// 			clippedNormals = append(clippedNormals, interpolatedNormal)
+// 		}
+// 	}
 
-	return reader.Face{
-		Vertices: clippedVertices,
-		Normals:  clippedNormals,
-	}
-}
+// 	return object.Face{
+// 		Vertices: clippedVertices,
+// 		Normals:  clippedNormals,
+// 	}
+// }
 
-func triangulate(f reader.Face) []reader.Face {
-	if len(f.Vertices) < 3 {
-		return nil
-	}
+// func triangulate(f object.Face) []object.Face {
+// 	if len(f.Vertices) < 3 {
+// 		return nil
+// 	}
 
-	triangles := make([]reader.Face, 0, 4)
-	anchor := f.Vertices[0]
-	anchorNor := f.Normals[0]
+// 	triangles := make([]object.Face, 0, 4)
+// 	anchor := f.Vertices[0]
+// 	anchorNor := f.Normals[0]
 
-	for i := 1; i < len(f.Vertices)-1; i++ {
-		currVer := []reader.Vec3{anchor, f.Vertices[i], f.Vertices[i+1]}
-		currNor := []reader.Vec3{anchorNor, f.Normals[i], f.Normals[i+1]}
-		triangles = append(triangles, reader.Face{Vertices: currVer, Normals: currNor})
-	}
+// 	for i := 1; i < len(f.Vertices)-1; i++ {
+// 		currVer := []object.Vec3{anchor, f.Vertices[i], f.Vertices[i+1]}
+// 		currNor := []object.Vec3{anchorNor, f.Normals[i], f.Normals[i+1]}
+// 		triangles = append(triangles, object.Face{Vertices: currVer, Normals: currNor})
+// 	}
 
-	return triangles
-}
+// 	return triangles
+// }
 
-func ClipAndTriangulate(f reader.Face, zNear, zFar, cameraWidth, cameraHeight float64) []reader.Face {
-	halfWidth := cameraWidth / 2
-	halfHeight := cameraHeight / 2
+// func ClipAndTriangulate(f object.Face, zNear, zFar, cameraWidth, cameraHeight float64) []object.Face {
+// 	halfWidth := cameraWidth / 2
+// 	halfHeight := cameraHeight / 2
 
-	planes := []plane{
-		{-1, 0, 0, halfWidth},
-		{1, 0, 0, halfWidth},
-		{0, -1, 0, halfHeight},
-		{0, 1, 0, halfHeight},
-		{0, 0, 1, -zNear},
-		{0, 0, -1, zFar},
-	}
+// 	planes := []plane{
+// 		{-1, 0, 0, halfWidth},
+// 		{1, 0, 0, halfWidth},
+// 		{0, -1, 0, halfHeight},
+// 		{0, 1, 0, halfHeight},
+// 		{0, 0, 1, -zNear},
+// 		{0, 0, -1, zFar},
+// 	}
 
-	clipped := f
-	for _, p := range planes {
-		clipped = clipFace(clipped, p)
-		if len(clipped.Vertices) == 0 {
-			break
-		}
-	}
+// 	clipped := f
+// 	for _, p := range planes {
+// 		clipped = clipFace(clipped, p)
+// 		if len(clipped.Vertices) == 0 {
+// 			break
+// 		}
+// 	}
 
-	return triangulate(clipped)
-}
+// 	return triangulate(clipped)
+// }
 
-func clipping(in <-chan *reader.Model, out chan<- *reader.Model, wg *sync.WaitGroup, zNear, zFar, cameraWidth, cameraHeight float64) {
-	defer wg.Done()
-	for m := range in {
-		clippedModel := reader.Model{Skeletonize: m.Skeletonize}
-		for _, face := range m.Faces {
-			clippedFaces := ClipAndTriangulate(face, zNear, zFar, cameraWidth, cameraHeight)
-			clippedModel.Faces = append(clippedModel.Faces, clippedFaces...)
-		}
-		out <- &clippedModel
-	}
-	if out != nil {
-		close(out)
-	}
-}
+// func clipping(in <-chan *object.Object, out chan<- *object.Object, wg *sync.WaitGroup, zNear, zFar, cameraWidth, cameraHeight float64) {
+// 	defer wg.Done()
+// 	for m := range in {
+// 		clippedModel := object.Object{Skeletonize: m.Skeletonize}
+// 		for _, face := range m.Faces {
+// 			clippedFaces := ClipAndTriangulate(face, zNear, zFar, cameraWidth, cameraHeight)
+// 			clippedModel.Faces = append(clippedModel.Faces, clippedFaces...)
+// 		}
+// 		out <- &clippedModel
+// 	}
+// 	if out != nil {
+// 		close(out)
+// 	}
+// }
