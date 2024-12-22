@@ -13,19 +13,9 @@ func main() {
 		log.Printf("error occured: %v", err)
 	}
 	tuictx := ui.NewContext(nil, v)
-	// p := tea.NewProgram(initialModel, tea.WithAltScreen())
-	// initialModel.AppendCommand("q", tui.Quit)
-	// initialModel.AppendCommand("l", tui.LoadObject)
-
-	// if _, err := p.Run(); err != nil {
-	// 	log.Printf("error: %v", err)
-	// 	os.Exit(1)
-	// }
 	app := ui.NewApp(tuictx)
 
-	// Run the UI application
 	if err := app.Run(); err != nil {
 		log.Fatal(err)
 	}
-
 }
