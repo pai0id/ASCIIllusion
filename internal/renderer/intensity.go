@@ -27,10 +27,6 @@ func calculateVertexIntensity(point, normal object.Vec3, lightSources []Light) f
 
 		attenuation := 1.0 / (attenConst + attenLinear*distance + attenQuadratic*distance*distance)
 
-		if normal.Dot(lightDir) <= 0 {
-			continue
-		}
-
 		diffuseFactor := math.Max(0, normal.Dot(lightDir))
 		diffuse := light.Intensity * diffuseFactor * attenuation
 

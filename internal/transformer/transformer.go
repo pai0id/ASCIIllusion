@@ -19,7 +19,7 @@ func ApplyTransformation(model *object.Object, transformation Mat4, withNormals 
 		}
 		if withNormals {
 			for i, normal := range face.Normals {
-				face.Normals[i] = transformation.MultiplyVec3(normal)
+				face.Normals[i] = transformation.MultiplyNormal(normal)
 			}
 		}
 	}

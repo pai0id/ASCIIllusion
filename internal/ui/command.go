@@ -14,7 +14,11 @@ func (a *App) parseEntry(s string) {
 	cmd := parts[0]
 	switch cmd {
 	case "c":
-		parts = strings.Split("l data/cube.obj $", " ")
+		if len(parts) == 1 {
+			parts = strings.Split("l data/cube.obj $", " ")
+		} else {
+			parts = strings.Split("l data/sphere.obj", " ")
+		}
 		cmd = "l"
 		fallthrough
 	case "l":
