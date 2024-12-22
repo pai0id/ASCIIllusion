@@ -9,7 +9,7 @@ import (
 
 const (
 	shininessC     = 32.0
-	ambientC       = 0.0
+	ambientC       = 0.1
 	attenConst     = 0.01
 	attenLinear    = 0.009
 	attenQuadratic = 0.0032
