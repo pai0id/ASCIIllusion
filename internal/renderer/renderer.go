@@ -9,16 +9,16 @@ import (
 	"github.com/pai0id/CgCourseProject/internal/transformer"
 )
 
-type point struct {
-	x, y int
-	z    float64
+type Point struct {
+	X, Y int
+	Z    float64
 }
 
-type polygon struct {
-	vertices    []point
-	normals     []object.Vec3
-	intensities []float64
-	skeletonize bool
+type Polygon struct {
+	Vertices    []Point
+	Normals     []object.Vec3
+	Intensities []float64
+	Skeletonize bool
 }
 
 type zBuffer [][]float64
@@ -49,7 +49,7 @@ func RenderModels(models []*object.Object, options *RenderOptions) asciiser.Imag
 	projectQueue := make(chan *object.Face, 100)
 	// clipQueue := make(chan *object.Face, 100)
 	screenQueue := make(chan *object.Face, 100)
-	rasterizeQueue := make(chan *polygon, 100)
+	rasterizeQueue := make(chan *Polygon, 100)
 
 	var wg sync.WaitGroup
 

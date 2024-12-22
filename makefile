@@ -1,5 +1,7 @@
 NAME ?= main
 
+.PHONY: test run build tidy clean default
+
 run:
 	CGO_ENABLED=0 go run ./cmd/$(NAME)
 
@@ -11,6 +13,14 @@ tidy:
 
 clean:
 	rm *.out tmp
+
+test:
+	@echo "Running tests in internal/renderer..."
+	@cd internal/renderer && go test ./... -cover
+	@echo "Running tests in internal/object..."
+	@cd internal/object && go test ./... -cover
+	@echo "Running tests in internal/transformer..."
+	@cd internal/transformer && go test ./... -cover
 
 default:
 	make build

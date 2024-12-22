@@ -15,7 +15,7 @@ const (
 	attenQuadratic = 0.0032
 )
 
-func calculateVertexIntensity(point, normal object.Vec3, lightSources []Light) float64 {
+func CalculateVertexIntensity(point, normal object.Vec3, lightSources []Light) float64 {
 	normal = normal.Normalize()
 	viewDirection := object.Vec3{X: 0, Y: 0, Z: 1}
 
@@ -45,7 +45,7 @@ func calcIntensity(in <-chan *object.Face, out chan<- *object.Face, wg *sync.Wai
 	for f := range in {
 		f.Intensities = make([]float64, 3)
 		for i, v := range f.Vertices {
-			f.Intensities[i] = calculateVertexIntensity(v, f.Normals[i], lightSrc)
+			f.Intensities[i] = CalculateVertexIntensity(v, f.Normals[i], lightSrc)
 		}
 		out <- f
 	}

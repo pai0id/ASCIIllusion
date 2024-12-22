@@ -8,16 +8,16 @@ import (
 
 const LineEPS = 0.005
 
-func barycentric(p point, a, b, c point) (float64, float64, float64) {
-	v0 := point{x: b.x - a.x, y: b.y - a.y}
-	v1 := point{x: c.x - a.x, y: c.y - a.y}
-	v2 := point{x: p.x - a.x, y: p.y - a.y}
+func Barycentric(p Point, a, b, c Point) (float64, float64, float64) {
+	v0 := Point{X: b.X - a.X, Y: b.Y - a.Y}
+	v1 := Point{X: c.X - a.X, Y: c.Y - a.Y}
+	v2 := Point{X: p.X - a.X, Y: p.Y - a.Y}
 
-	d00 := float64(v0.x*v0.x + v0.y*v0.y)
-	d01 := float64(v0.x*v1.x + v0.y*v1.y)
-	d11 := float64(v1.x*v1.x + v1.y*v1.y)
-	d20 := float64(v2.x*v0.x + v2.y*v0.y)
-	d21 := float64(v2.x*v1.x + v2.y*v1.y)
+	d00 := float64(v0.X*v0.X + v0.Y*v0.Y)
+	d01 := float64(v0.X*v1.X + v0.Y*v1.Y)
+	d11 := float64(v1.X*v1.X + v1.Y*v1.Y)
+	d20 := float64(v2.X*v0.X + v2.Y*v0.Y)
+	d21 := float64(v2.X*v1.X + v2.Y*v1.Y)
 
 	denom := d00*d11 - d01*d01
 	if denom == 0 {
@@ -31,29 +31,29 @@ func barycentric(p point, a, b, c point) (float64, float64, float64) {
 	return u, v, w
 }
 
-func boundingBox(vertices []point) (int, int, int, int) {
-	xMin, xMax := vertices[0].x, vertices[0].x
-	yMin, yMax := vertices[0].y, vertices[0].y
+func BoundingBox(vertices []Point) (int, int, int, int) {
+	xMin, xMax := vertices[0].X, vertices[0].X
+	yMin, yMax := vertices[0].Y, vertices[0].Y
 
 	for _, v := range vertices {
-		if v.x < xMin {
-			xMin = v.x
+		if v.X < xMin {
+			xMin = v.X
 		}
-		if v.x > xMax {
-			xMax = v.x
+		if v.X > xMax {
+			xMax = v.X
 		}
-		if v.y < yMin {
-			yMin = v.y
+		if v.Y < yMin {
+			yMin = v.Y
 		}
-		if v.y > yMax {
-			yMax = v.y
+		if v.Y > yMax {
+			yMax = v.Y
 		}
 	}
 
 	return xMin, xMax, yMin, yMax
 }
 
-func rasterize(in <-chan *polygon, wg *sync.WaitGroup, img asciiser.Image, zb zBuffer) {
+func rasterize(in <-chan *Polygon, wg *sync.WaitGroup, img asciiser.Image, zb zBuffer) {
 	defer wg.Done()
 
 	for p := range in {
@@ -61,20 +61,20 @@ func rasterize(in <-chan *polygon, wg *sync.WaitGroup, img asciiser.Image, zb zB
 	}
 }
 
-func rasterizePolygon(p *polygon, img asciiser.Image, zb zBuffer) {
-	xMin, xMax, yMin, yMax := boundingBox(p.vertices)
+func rasterizePolygon(p *Polygon, img asciiser.Image, zb zBuffer) {
+	xMin, xMax, yMin, yMax := BoundingBox(p.Vertices)
 
 	for y := yMin; y <= yMax; y++ {
 		for x := xMin; x <= xMax; x++ {
 			if x >= 0 && x < len(img[0]) && y >= 0 && y < len(img) {
-				pt := point{x: x, y: y}
-				u, v, w := barycentric(pt, p.vertices[0], p.vertices[1], p.vertices[2])
+				pt := Point{X: x, Y: y}
+				u, v, w := Barycentric(pt, p.Vertices[0], p.Vertices[1], p.Vertices[2])
 
 				if u >= 0 && v >= 0 && w >= 0 {
-					z := u*p.vertices[0].z + v*p.vertices[1].z + w*p.vertices[2].z
+					z := u*p.Vertices[0].Z + v*p.Vertices[1].Z + w*p.Vertices[2].Z
 					if zb[y][x] > z {
-						lighting := u*p.intensities[0] + v*p.intensities[1] + w*p.intensities[2]
-						if p.skeletonize && (u < LineEPS || v < LineEPS || w < LineEPS) {
+						lighting := u*p.Intensities[0] + v*p.Intensities[1] + w*p.Intensities[2]
+						if p.Skeletonize && (u < LineEPS || v < LineEPS || w < LineEPS) {
 							img[y][x] = asciiser.Pixel{IsLine: true}
 						} else {
 							img[y][x] = asciiser.Pixel{Brightness: lighting, IsPolygon: true}
