@@ -2,7 +2,6 @@ package renderer
 
 import (
 	"math"
-	"sync"
 
 	"github.com/pai0id/CgCourseProject/internal/object"
 )
@@ -40,16 +39,12 @@ func CalculateVertexIntensity(point, normal object.Vec3, lightSources []Light) f
 	return math.Min(1, math.Max(0, totalLight))
 }
 
-func calcIntensity(in <-chan *object.Face, out chan<- *object.Face, wg *sync.WaitGroup, lightSrc []Light) {
-	defer wg.Done()
+func calcIntensity(in <-chan *object.Face, out chan<- *object.Face, lightSrc []Light) {
 	for f := range in {
 		f.Intensities = make([]float64, 3)
 		for i, v := range f.Vertices {
 			f.Intensities[i] = CalculateVertexIntensity(v, f.Normals[i], lightSrc)
 		}
 		out <- f
-	}
-	if out != nil {
-		close(out)
 	}
 }

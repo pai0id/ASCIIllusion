@@ -1,8 +1,6 @@
 package renderer
 
 import (
-	"sync"
-
 	"github.com/pai0id/CgCourseProject/internal/asciiser"
 )
 
@@ -53,9 +51,7 @@ func BoundingBox(vertices []Point) (int, int, int, int) {
 	return xMin, xMax, yMin, yMax
 }
 
-func rasterize(in <-chan *Polygon, wg *sync.WaitGroup, img asciiser.Image, zb zBuffer) {
-	defer wg.Done()
-
+func rasterize(in <-chan *Polygon, img asciiser.Image, zb zBuffer) {
 	for p := range in {
 		rasterizePolygon(p, img, zb)
 	}

@@ -2,6 +2,7 @@ package renderer
 
 import (
 	"math"
+	"runtime"
 	"sync"
 
 	"github.com/pai0id/CgCourseProject/internal/asciiser"
@@ -38,6 +39,7 @@ func RenderModels(models []*object.Object, options *RenderOptions) asciiser.Imag
 	if options.Width == 0 || options.Height == 0 {
 		return nil
 	}
+
 	image := asciiser.NewImage(options.Width, options.Height)
 	zb := newZBuffer(options.Width, options.Height)
 
@@ -52,24 +54,50 @@ func RenderModels(models []*object.Object, options *RenderOptions) asciiser.Imag
 
 	var wg sync.WaitGroup
 
-	wg.Add(1)
-	go enface(models, calcIntensityQueue, &wg)
+	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	wg.Add(1)
-	go calcIntensity(calcIntensityQueue, camerizeQueue, &wg, getLights(options.LightSources))
+	go func() {
+		defer wg.Done()
+		enface(models, calcIntensityQueue)
+		close(calcIntensityQueue)
+	}()
 
 	wg.Add(1)
-	go camerize(camerizeQueue, projectQueue, &wg, viewMatrix)
+	go func() {
+		defer wg.Done()
+		calcIntensity(calcIntensityQueue, camerizeQueue, getLights(options.LightSources))
+		close(camerizeQueue)
+	}()
 
 	wg.Add(1)
-	go project(projectQueue, screenQueue, &wg, projectionMatrix)
+	go func() {
+		defer wg.Done()
+		camerize(camerizeQueue, projectQueue, viewMatrix)
+		close(projectQueue)
+	}()
 
 	wg.Add(1)
-	go screen(screenQueue, rasterizeQueue, &wg, options.Width, options.Height)
+	go func() {
+		defer wg.Done()
+		project(projectQueue, screenQueue, projectionMatrix)
+		close(screenQueue)
+	}()
 
 	wg.Add(1)
-	go rasterize(rasterizeQueue, &wg, image, zb)
+	go func() {
+		defer wg.Done()
+		screen(screenQueue, rasterizeQueue, options.Width, options.Height)
+		close(rasterizeQueue)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		rasterize(rasterizeQueue, image, zb)
+	}()
 
 	wg.Wait()
+
 	return image
 }
