@@ -47,7 +47,6 @@ func RenderModels(models []*object.Object, options *RenderOptions) asciiser.Imag
 	calcIntensityQueue := make(chan *object.Face, 100)
 	camerizeQueue := make(chan *object.Face, 100)
 	projectQueue := make(chan *object.Face, 100)
-	// clipQueue := make(chan *object.Face, 100)
 	screenQueue := make(chan *object.Face, 100)
 	rasterizeQueue := make(chan *Polygon, 100)
 
@@ -64,9 +63,6 @@ func RenderModels(models []*object.Object, options *RenderOptions) asciiser.Imag
 
 	wg.Add(1)
 	go project(projectQueue, screenQueue, &wg, projectionMatrix)
-
-	// wg.Add(1)
-	// go clip(clipQueue, screenQueue, &wg, options.Cam.ZNear, options.Cam.ZFar, float64(options.Width), float64(options.Height))
 
 	wg.Add(1)
 	go screen(screenQueue, rasterizeQueue, &wg, options.Width, options.Height)
