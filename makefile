@@ -1,4 +1,5 @@
 NAME ?= main
+# make run NAME=testing
 
 .PHONY: test run build tidy clean default
 
