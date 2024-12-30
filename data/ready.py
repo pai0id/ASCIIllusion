@@ -1,74 +1,85 @@
-import sys
-import argparse
+import os
+import re
+import tempfile
+import shutil
 
-def read_obj(file_path):
-    vertices = []
-    normals = []
-    faces = []
-    
-    with open(file_path, 'r') as file:
-        for line in file:
-            if line.startswith('v '):
-                parts = line.strip().split()
-                vertices.append(tuple(map(float, parts[1:])))
-            elif line.startswith('vn '):
-                parts = line.strip().split()
-                normals.append(tuple(map(float, parts[1:])))
-            elif line.startswith('f '):
-                parts = line.strip().split()
-                face = []
-                for p in parts[1:]:
-                    indices = p.split('/')
-                    vertex_idx = int(indices[0])
-                    normal_idx = int(indices[2]) if len(indices) > 2 and indices[2] else None
-                    face.append((vertex_idx, normal_idx))
-                faces.append(face)
-    
-    return vertices, normals, faces
+def remove_normals_and_textures_from_obj(input_file, output_file):
+    try:
+        with open(input_file, 'r') as infile, \
+             (tempfile.NamedTemporaryFile('w', delete=False) if input_file == output_file else open(output_file, 'w')) as outfile:
+            temp_name = outfile.name
+            for line in infile:
+                if line.startswith('vn ') or line.startswith('vt '):
+                    continue
+                if line.startswith('f '):
+                    cleaned_line = re.sub(r'(\d+)/\d*/\d*', r'\1', line)
+                    outfile.write(cleaned_line)
+                else:
+                    outfile.write(line)
 
-def triangulate_faces(faces):
-    triangulated_faces = []
+        if input_file == output_file:
+            try:
+                os.replace(temp_name, input_file)
+            except OSError as e:
+                if e.errno == 18:  # Invalid cross-device link
+                    shutil.move(temp_name, input_file)
+                else:
+                    raise
 
-    for face in faces:
-        if len(face) == 3:
-            triangulated_faces.append(face)
-        else:
-            for i in range(1, len(face) - 1):
-                triangulated_faces.append([face[0], face[i], face[i + 1]])
+        print(f"Normals and texture coordinates removed. Output saved to {output_file}")
+    except FileNotFoundError:
+        print(f"Error: File '{input_file}' not found.")
+    except IOError as e:
+        print(f"An I/O error occurred: {e}")
 
-    return triangulated_faces
+def triangulate_obj(input_file, output_file):
+    try:
+        with open(input_file, 'r') as infile, \
+             (tempfile.NamedTemporaryFile('w', delete=False) if input_file == output_file else open(output_file, 'w')) as outfile:
+            temp_name = outfile.name
+            for line in infile:
+                if line.startswith('f '):
+                    parts = line.split()
+                    face_vertices = parts[1:]
 
-def write_obj(file_path, vertices, normals, faces):
-    with open(file_path, 'w') as file:
-        for vertex in vertices:
-            file.write(f"v {vertex[0]} {vertex[1]} {vertex[2]}\n")
+                    if len(face_vertices) <= 3:
+                        outfile.write(line)
+                    else:
+                        for i in range(1, len(face_vertices) - 1):
+                            triangle = f"f {face_vertices[0]} {face_vertices[i]} {face_vertices[i + 1]}\n"
+                            outfile.write(triangle)
+                else:
+                    outfile.write(line)
 
-        for normal in normals:
-            file.write(f"vn {normal[0]} {normal[1]} {normal[2]}\n")
+        if input_file == output_file:
+            try:
+                os.replace(temp_name, input_file)
+            except OSError as e:
+                if e.errno == 18:  # Invalid cross-device link
+                    shutil.move(temp_name, input_file)
+                else:
+                    raise
 
-        for face in faces:
-            face_str = ' '.join(
-                f"{v_idx}//{n_idx}" if n_idx else f"{v_idx}"
-                for v_idx, n_idx in face
-            )
-            file.write(f"f {face_str}\n")
+        print(f"Successfully triangulated and saved to {output_file}")
+    except FileNotFoundError:
+        print(f"Error: The file '{input_file}' does not exist.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
 
 def main():
-    parser = argparse.ArgumentParser(description="Triangulate faces in an OBJ file, including normals.")
-    parser.add_argument("input_file", help="Path to the input OBJ file.")
-    parser.add_argument("output_file", help="Path to the output OBJ file.")
-    args = parser.parse_args()
+    print("Welcome to the OBJ Cleaner Tool!")
+    input_path = input("Enter the path to the .obj file: ").strip()
+    output_path = input("Enter the path to save the output file: ").strip()
+    triangulate = input("Triangulate? (Y/n): ").strip()
+    
+    if not os.path.exists(input_path):
+        print(f"Error: The file '{input_path}' does not exist.")
+        return
+    
+    remove_normals_and_textures_from_obj(input_path, output_path)
 
-    input_file = args.input_file
-    output_file = args.output_file
-
-    try:
-        vertices, normals, faces = read_obj(input_file)
-        triangulated_faces = triangulate_faces(faces)
-        write_obj(output_file, vertices, normals, triangulated_faces)
-        print(f"Triangulated OBJ file with normals saved to {output_file}")
-    except Exception as e:
-        print(f"Error: {e}")
+    if triangulate.lower() != 'n':
+        triangulate_obj(output_path, output_path)
 
 if __name__ == "__main__":
     main()

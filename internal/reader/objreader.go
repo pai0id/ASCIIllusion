@@ -40,7 +40,7 @@ func LoadOBJ(filepath string) (*object.Object, error) {
 		case strings.HasPrefix(line, "f "):
 			face, err := parseFace(line, vertices, normals)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse object.Face: %w", err)
+				return nil, fmt.Errorf("failed to parse face: %w", err)
 			}
 			model.Faces = append(model.Faces, face)
 		}
@@ -51,6 +51,9 @@ func LoadOBJ(filepath string) (*object.Object, error) {
 	}
 
 	model.CalculateCenter()
+	if len(normals) == 0 {
+		generateNormals(model)
+	}
 
 	return model, nil
 }
@@ -98,7 +101,7 @@ func parseNormal(line string) (object.Vec3, error) {
 func parseFace(line string, vertices []object.Vec3, normals []object.Vec3) (object.Face, error) {
 	parts := strings.Fields(line)
 	if len(parts) != 4 {
-		return object.Face{}, fmt.Errorf("invalid object.Face line: %s, must have exactly 3 vertices", line)
+		return object.Face{}, fmt.Errorf("invalid face line: %s, must have exactly 3 vertices", line)
 	}
 
 	var faceVertices = make([]object.Vec3, 3)
@@ -107,7 +110,7 @@ func parseFace(line string, vertices []object.Vec3, normals []object.Vec3) (obje
 	for i, part := range parts[1:] {
 		indices := strings.Split(part, "/")
 		if len(indices) < 1 {
-			return object.Face{}, fmt.Errorf("invalid object.Face element: %s", part)
+			return object.Face{}, fmt.Errorf("invalid face element: %s", part)
 		}
 
 		vertexIndex, err := strconv.Atoi(indices[0])
@@ -116,15 +119,32 @@ func parseFace(line string, vertices []object.Vec3, normals []object.Vec3) (obje
 		}
 		faceVertices[i] = vertices[vertexIndex-1]
 
-		normalIndex, err := strconv.Atoi(indices[2])
-		if err != nil || normalIndex < 1 || normalIndex > len(normals) {
-			return object.Face{}, fmt.Errorf("invalid normal index: %w", err)
+		if len(indices) > 2 && indices[2] != "" {
+			normalIndex, err := strconv.Atoi(indices[2])
+			if err != nil || normalIndex < 1 || normalIndex > len(normals) {
+				return object.Face{}, fmt.Errorf("invalid normal index: %w", err)
+			}
+			faceNormals[i] = normals[normalIndex-1]
 		}
-		faceNormals[i] = normals[normalIndex-1]
 	}
 
 	return object.Face{
 		Vertices: faceVertices,
 		Normals:  faceNormals,
 	}, nil
+}
+
+func generateNormals(model *object.Object) {
+	for i := range model.Faces {
+		face := &model.Faces[i]
+		center := model.Center
+		for j, vertex := range face.Vertices {
+			normal := object.Vec3{
+				X: vertex.X - center.X,
+				Y: vertex.Y - center.Y,
+				Z: vertex.Z - center.Z,
+			}
+			face.Normals[j] = normal.Normalize()
+		}
+	}
 }
