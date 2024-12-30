@@ -16,7 +16,6 @@ func TestDeepCopy(t *testing.T) {
 
 	copy := face.DeepCopy()
 
-	// Ensure deep copy is successful and independent
 	if &face.Vertices[0] == &copy.Vertices[0] {
 		t.Fatalf("Vertices were not deep copied")
 	}
@@ -27,7 +26,6 @@ func TestDeepCopy(t *testing.T) {
 		t.Fatalf("Intensities were not deep copied")
 	}
 
-	// Ensure data is preserved
 	if face.Skeletonize != copy.Skeletonize {
 		t.Fatalf("Skeletonize value was not copied")
 	}
