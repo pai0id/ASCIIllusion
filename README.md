@@ -1,4 +1,6 @@
-# CgCourseProject
+# ASCIIllusion (CgCourseProject)
+
+Визуализатор трёхмерных моделей с использованием ASCII графики
 
 Курсовая работа КГ МГТУ 5 сем
 
